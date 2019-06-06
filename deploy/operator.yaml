@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-ingress-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: nginx-ingress-operator
+  template:
+    metadata:
+      labels:
+        name: nginx-ingress-operator
+    spec:
+      serviceAccountName: nginx-ingress-operator
+      containers:
+        - name: nginx-ingress-operator
+          # Replace this with the built image name
+          image: REPLACE_IMAGE
+          command:
+          - nginx-ingress-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "nginx-ingress-operator"

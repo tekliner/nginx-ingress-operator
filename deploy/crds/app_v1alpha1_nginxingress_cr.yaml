@@ -1,0 +1,7 @@
+apiVersion: app.improvado.io/v1alpha1
+kind: NginxIngress
+metadata:
+  name: example-nginxingress
+spec:
+  # Add fields here
+  size: 3

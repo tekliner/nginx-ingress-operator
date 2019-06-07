@@ -31,6 +31,19 @@ type NginxIngress struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// la sentry
+	SentryDSN string `json:"sentryDSN,omitempty"`
+
+	NginxImage string            `json:"nginxImage,omitempty"` // default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
+	Replicas   int               `json:"replicas"`
+	RunAsUser  int               `json:"runAsUser,omitempty"` // default 33
+	Ports      map[string]string `json:"ports"`
+
+	Annotations map[string]string `json:"annotations,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
+
+	DNSPolicy string `json:"dnsPolicy,omitempty"`
+
 	Spec   NginxIngressSpec   `json:"spec,omitempty"`
 	Status NginxIngressStatus `json:"status,omitempty"`
 }

@@ -21,6 +21,8 @@ spec:
           - nginx-ingress-operator
           imagePullPolicy: Always
           env:
+            - name: SENTRY_DSN
+              value: "https://132d56e41f7f4f1fa98faab49ad48684:bec2b45ba3f248e38aedce78cf3554fc@sentry.tools.improvado.io/40"
             - name: WATCH_NAMESPACE
               value: ""
             - name: POD_NAME

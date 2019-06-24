@@ -2,9 +2,11 @@ package nginxingress
 
 import (
 	"context"
+	"os"
 
+	raven "github.com/getsentry/raven-go"
 	appv1alpha1 "github.com/tekliner/nginx-ingress-operator/pkg/apis/app/v1alpha1"
-
+	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,6 +23,12 @@ import (
 )
 
 var log = logf.Log.WithName("controller_nginxingress")
+
+func init() {
+	if os.Getenv("SENTRY_DSN") != "" {
+		raven.SetDSN(os.Getenv("SENTRY_DSN"))
+	}
+}
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -97,55 +105,78 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
+		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
+	// Define a new Deployment object
+	newDeployment := newDeployment(instance)
 
 	// Set NginxIngress instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, newDeployment, r.scheme); err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	}
 
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+	foundDeployment := &v1.Deployment{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: foundDeployment.Name, Namespace: foundDeployment.Namespace}, foundDeployment)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+		reqLogger.Info("Creating a new deployment", "Namespace", newDeployment.Namespace, "Name", newDeployment.Name)
+		err = r.client.Create(context.TODO(), newDeployment)
 		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
 			return reconcile.Result{}, err
 		}
-
-		// Pod created successfully - don't requeue
 		return reconcile.Result{}, nil
 	} else if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	// Deployment already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Deployment already exists", "Namespace", foundDeployment.Namespace, "Name", foundDeployment.Name)
 	return reconcile.Result{}, nil
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *appv1alpha1.NginxIngress) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	return &corev1.Pod{
+func newDeployment(cr *appv1alpha1.NginxIngress) *v1.Deployment {
+
+	// add arguments for default command
+	args := []string{}
+
+	return &v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
+			Name:      cr.Name,
+			Namespace: cr.ObjectMeta.Namespace,
+			Labels:    baseLabels(cr),
 		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
+		Spec: v1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: baseLabels(cr),
+			},
+			Strategy: v1.DeploymentStrategy{Type: v1.RollingUpdateDeploymentStrategyType, RollingUpdate: nil},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: mergeMaps(baseLabels(cr),
+						map[string]string{"app.improvado.io/component": "deployment"},
+					),
+					Annotations: setAnnotations(cr, cr.Annotations),
+				},
+
+				Spec: corev1.PodSpec{
+					ServiceAccountName: cr.Spec.ServiceAccount,
+					Containers: []corev1.Container{
+						{
+							Name:  "nginx",
+							Image: cr.Spec.NginxController.Image.Repository + ":" + cr.Spec.NginxController.Image.Tag,
+							Args:  args,
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: 80,
+								},
+							},
+							Env: append(returnDefaultENV(), cr.Spec.NginxController.Env...),
+						},
+					},
 				},
 			},
 		},

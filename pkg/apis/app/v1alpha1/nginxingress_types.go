@@ -1,18 +1,55 @@
 package v1alpha1
 
 import (
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+type ImageSpec struct {
+	Tag        string `json:"tag"`
+	Repository string `json:"repository"`
+	PullPolicy string `json:"pullPolicy,omitempty"`
+}
+
+type DefaultBackend struct {
+	Name  string    `json:"name"`
+	Image ImageSpec `json:"image"`
+}
+
+type ServiceSpec struct {
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+type NginxControllerSpec struct {
+	Image ImageSpec `json:"image,omitempty"` // default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
+	Env        []v1.EnvVar `json:"env"`
+	ElectionID string      `json:"electionID"`
+
+	// nginx configuration
+	Config      map[string]string `json:"config,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Headers     string            `json:"headers,omitempty"`
+	HostNetwork bool              `json:"hostNetwork,omitempty"`
+
+	PriorityClassName     string      `json:"priorityClassName.omitempty"`
+	DefaultBackendService string      `json:"defaultBackendService,omitempty"`
+	DNSPolicy             string      `json:"dnsPolicy,omitempty"`
+	IngressClass          string      `json:"ingressClass,omitempty"`
+	Service               ServiceSpec `json:"service,omitempty"`
+}
 
 // NginxIngressSpec defines the desired state of NginxIngress
 // +k8s:openapi-gen=true
 type NginxIngressSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+
+	Replicas   int    `json:"replicas"`
+	RunAsUser  int    `json:"runAsUser,omitempty"` // default 33
+
+	NginxController     NginxControllerSpec `json:"nginxController"`
+	DefaultBackend DefaultBackend `json:"defaultBackend,omitempty"`
+
+	ServiceAccount string `json:"serviceAccount"`
 }
 
 // NginxIngressStatus defines the observed state of NginxIngress

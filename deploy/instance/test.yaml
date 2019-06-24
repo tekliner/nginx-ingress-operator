@@ -1,0 +1,15 @@
+apiVersion: app.improvado.io/v1alpha1
+kind: NginxIngress
+metadata:
+  name: test-ingress
+spec:
+  replicas: 1
+  serviceAccount: nginx-ingress-operator
+  nginxController:
+    image:
+      repository: "quay.io/kubernetes-ingress-controller/nginx-ingress-controller"
+      tag: "0.24.1"
+      pullPolicy: IfNotPresent
+    config:
+      use-proxy-protocol: "true"
+      http2-max-field-size: 8k

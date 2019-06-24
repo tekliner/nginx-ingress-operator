@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -106,6 +105,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
+		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	}
 
@@ -114,6 +114,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 
 	// Set NginxIngress instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, newDeployment, r.scheme); err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	}
 
@@ -123,10 +124,12 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		reqLogger.Info("Creating a new deployment", "Namespace", newDeployment.Namespace, "Name", newDeployment.Name)
 		err = r.client.Create(context.TODO(), newDeployment)
 		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
 			return reconcile.Result{}, err
 		}
 		return reconcile.Result{}, nil
 	} else if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	}
 
@@ -137,8 +140,8 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 
 func newDeployment(cr *appv1alpha1.NginxIngress) *v1.Deployment {
 
-	args := []string{}
 	// add arguments for default command
+	args := []string{}
 
 	return &v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -146,7 +149,6 @@ func newDeployment(cr *appv1alpha1.NginxIngress) *v1.Deployment {
 			Namespace: cr.ObjectMeta.Namespace,
 			Labels:    baseLabels(cr),
 		},
-
 		Spec: v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: baseLabels(cr),
@@ -155,127 +157,24 @@ func newDeployment(cr *appv1alpha1.NginxIngress) *v1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: mergeMaps(baseLabels(cr),
-						map[string]string{"app.improvado.io/component": "controller"},
+						map[string]string{"app.improvado.io/component": "deployment"},
 					),
 					Annotations: setAnnotations(cr, cr.Annotations),
 				},
 
 				Spec: corev1.PodSpec{
+					ServiceAccountName: cr.Spec.ServiceAccount,
 					Containers: []corev1.Container{
 						{
 							Name:  "nginx",
-							Image: cr.Spec.NginxImage,
+							Image: cr.Spec.NginxController.Image.Repository + ":" + cr.Spec.NginxController.Image.Tag,
 							Args:  args,
 							Ports: []corev1.ContainerPort{
 								{
-									ContainerPort: 8000,
-								},
-							},
-							Env: cr.Spec.Env,
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "static",
-									MountPath: "/usr/src/app/jobprocessor/static",
-								},
-								{
-									Name:      "media",
-									MountPath: "/usr/src/app/jobprocessor/media",
-								},
-							},
-							Resources: cr.Spec.Application.Resources,
-						},
-						{
-							Name:  "jobprocessor-nginx",
-							Image: cr.Spec.NginxImage.Repository + ":" + cr.Spec.NginxImage.Tag,
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          "http",
 									ContainerPort: 80,
 								},
 							},
-							LivenessProbe: &corev1.Probe{
-								FailureThreshold:    3,
-								InitialDelaySeconds: 20,
-								PeriodSeconds:       40,
-								SuccessThreshold:    1,
-								TimeoutSeconds:      1,
-								Handler: corev1.Handler{
-									HTTPGet: &corev1.HTTPGetAction{
-										Path:   "/-/liveness",
-										Port:   intstr.IntOrString{IntVal: 8000},
-										Scheme: corev1.URISchemeHTTP,
-									},
-								},
-							},
-							ReadinessProbe: &corev1.Probe{
-								FailureThreshold:    3,
-								InitialDelaySeconds: 10,
-								PeriodSeconds:       20,
-								SuccessThreshold:    1,
-								TimeoutSeconds:      1,
-								Handler: corev1.Handler{
-									HTTPGet: &corev1.HTTPGetAction{
-										Path:   "/-/readiness",
-										Port:   intstr.IntOrString{IntVal: 8000},
-										Scheme: corev1.URISchemeHTTP,
-									},
-								},
-							},
-							Lifecycle: &corev1.Lifecycle{
-								PreStop: &corev1.Handler{
-									Exec: &corev1.ExecAction{
-										Command: []string{"sleep", "15"},
-									},
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "nginx-config",
-									MountPath: "/etc/nginx/nginx.conf",
-									SubPath:   "nginx.conf",
-								},
-								{
-									Name:      "static",
-									MountPath: "/usr/src/app/jobprocessor/static",
-								},
-								{
-									Name:      "media",
-									MountPath: "/usr/src/app/jobprocessor/media",
-								},
-							},
-						},
-						{
-							Name:  "statsd",
-							Image: cr.Spec.StatsdImage.Repository + ":" + cr.Spec.StatsdImage.Tag,
-							Ports: []corev1.ContainerPort{
-								{
-									ContainerPort: 9102,
-								},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "nginx-config",
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cr.Name + "-nginx-config",
-									},
-								},
-							},
-						},
-						{
-							Name: "static",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-						{
-							Name: "media",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
+							Env: append(returnDefaultENV(), cr.Spec.NginxController.Env...),
 						},
 					},
 				},

@@ -5,9 +5,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type defaultBackend struct {
-	Name  string `json:"name"`
-	Image string `json:"image"`
+type ImageSpec struct {
+	Tag        string `json:"tag"`
+	Repository string `json:"repository"`
+	PullPolicy string `json:"pullPolicy,omitempty"`
+}
+
+type DefaultBackend struct {
+	Name  string    `json:"name"`
+	Image ImageSpec `json:"image"`
+}
+
+type ServiceSpec struct {
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+type NginxControllerSpec struct {
+	Image ImageSpec `json:"image,omitempty"` // default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
+	Env        []v1.EnvVar `json:"env"`
+	ElectionID string      `json:"electionID"`
+
+	// nginx configuration
+	Config      map[string]string `json:"config,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Headers     string            `json:"headers,omitempty"`
+	HostNetwork bool              `json:"hostNetwork,omitempty"`
+
+	PriorityClassName     string      `json:"priorityClassName.omitempty"`
+	DefaultBackendService string      `json:"defaultBackendService,omitempty"`
+	DNSPolicy             string      `json:"dnsPolicy,omitempty"`
+	IngressClass          string      `json:"ingressClass,omitempty"`
+	Service               ServiceSpec `json:"service,omitempty"`
 }
 
 // NginxIngressSpec defines the desired state of NginxIngress
@@ -15,22 +43,11 @@ type defaultBackend struct {
 type NginxIngressSpec struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	NginxImage string            `json:"nginxImage,omitempty"` // default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
-	Replicas   int               `json:"replicas"`
-	RunAsUser  int               `json:"runAsUser,omitempty"` // default 33
-	Ports      map[string]string `json:"ports"`
-	Env        []v1.EnvVar       `json:"env"`
-	ElectionID string            `json:"electionID"`
+	Replicas   int    `json:"replicas"`
+	RunAsUser  int    `json:"runAsUser,omitempty"` // default 33
 
-	Annotations       map[string]string `json:"annotations,omitempty"`
-	Labels            map[string]string `json:"labels,omitempty"`
-	IngressClass      string            `json:"ingressClass"`
-	PriorityClassName string            `json:"priorityClassName.omitempty"`
-
-	DNSPolicy string `json:"dnsPolicy,omitempty"`
-
-	DefaultBackend        defaultBackend `json:"defaultBackend,omitempty"`
-	DefaultBackendService string         `json:"defaultBackendService,omitempty"`
+	NginxController     NginxControllerSpec `json:"nginxController"`
+	DefaultBackend DefaultBackend `json:"defaultBackend,omitempty"`
 
 	ServiceAccount string `json:"serviceAccount"`
 }

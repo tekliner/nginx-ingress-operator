@@ -16,26 +16,28 @@ type DefaultBackend struct {
 	Image ImageSpec `json:"image"`
 }
 
-type ServiceSpec struct {
-	Annotations map[string]string `json:"annotations,omitempty"`
-}
-
 type NginxControllerSpec struct {
-	Image ImageSpec `json:"image,omitempty"` // default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
+	Image      ImageSpec   `json:"image,omitempty"` // default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
 	Env        []v1.EnvVar `json:"env"`
 	ElectionID string      `json:"electionID"`
+	CustomArgs []string    `json:"customArgs,omitempty"`
+	RunAsUser  int64       `json:"runAsUser,omitempty"` // default 33
 
 	// nginx configuration
-	Config      map[string]string `json:"config,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-	Headers     string            `json:"headers,omitempty"`
-	HostNetwork bool              `json:"hostNetwork,omitempty"`
+	Config         map[string]string `json:"config,omitempty"`
+	Labels         map[string]string `json:"labels,omitempty"`
+	Headers        string            `json:"headers,omitempty"`
+	HostNetwork    bool              `json:"hostNetwork,omitempty"`
+	ConfigMap      string            `json:"configmap"`
+	ConfigMapNginx string            `json:"configmapNginx"`
+	ConfigMapTCP   string            `json:"configmapTCP"`
+	ConfigMapUDP   string            `json:"configmapUDP"`
+	WatchNamespace string            `json:"watchNamespace,omitempty"`
 
-	PriorityClassName     string      `json:"priorityClassName.omitempty"`
-	DefaultBackendService string      `json:"defaultBackendService,omitempty"`
-	DNSPolicy             string      `json:"dnsPolicy,omitempty"`
-	IngressClass          string      `json:"ingressClass,omitempty"`
-	Service               ServiceSpec `json:"service,omitempty"`
+	PriorityClassName     string       `json:"priorityClassName.omitempty"`
+	DefaultBackendService string       `json:"defaultBackendService,omitempty"`
+	DNSPolicy             v1.DNSPolicy `json:"dnsPolicy,omitempty"`
+	IngressClass          string       `json:"ingressClass,omitempty"`
 }
 
 // NginxIngressSpec defines the desired state of NginxIngress
@@ -43,11 +45,12 @@ type NginxControllerSpec struct {
 type NginxIngressSpec struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	Replicas   int    `json:"replicas"`
-	RunAsUser  int    `json:"runAsUser,omitempty"` // default 33
+	Replicas int32 `json:"replicas"`
 
-	NginxController     NginxControllerSpec `json:"nginxController"`
-	DefaultBackend DefaultBackend `json:"defaultBackend,omitempty"`
+	NginxController         NginxControllerSpec `json:"nginxController"`
+	DefaultBackend          DefaultBackend      `json:"defaultBackend,omitempty"`
+	NginxServiceSpec        v1.ServiceSpec      `json:"service"`
+	NginxServiceAnnotations map[string]string   `json:"serviceAnnotations,omitempty"`
 
 	ServiceAccount string `json:"serviceAccount"`
 }

@@ -1,0 +1,53 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: hello-node
+  name: hello-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-node
+  template:
+    metadata:
+      labels:
+        app: hello-node
+    spec:
+      containers:
+      - image: gcr.io/hello-minikube-zero-install/hello-node
+        imagePullPolicy: Always
+        name: hello-node
+        resources: {}
+      restartPolicy: Always
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: "testicula"
+  name: hello-world
+spec:
+  rules:
+  - host:  hello.i.sandbox.rtb-media.me
+    http:
+      paths:
+      - backend:
+          serviceName: hello-node
+          servicePort: 80
+        path: /
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-node
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: hello-node
+  type: ClusterIP

@@ -9,7 +9,6 @@ import (
 	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -109,25 +108,51 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	// Define a new Deployment object
-	newDeployment := newDeployment(instance)
+	// TODO: add equality check for deployment
+
+	// reconcile deployment
+	newDeployment := generateDeployment(instance)
 
 	// Set NginxIngress instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, newDeployment, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, &newDeployment, r.scheme); err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	}
 
 	foundDeployment := &v1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: foundDeployment.Name, Namespace: foundDeployment.Namespace}, foundDeployment)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newDeployment.Name, Namespace: newDeployment.Namespace}, foundDeployment)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new deployment", "Namespace", newDeployment.Namespace, "Name", newDeployment.Name)
-		err = r.client.Create(context.TODO(), newDeployment)
+		reqLogger.Info("Creating a new Deployment", "Namespace", newDeployment.Namespace, "Name", newDeployment.Name)
+		err = r.client.Create(context.TODO(), &newDeployment)
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			return reconcile.Result{}, err
 		}
-		return reconcile.Result{}, nil
+	} else if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		return reconcile.Result{}, err
+	}
+
+	// TODO: add equality check for service
+
+	// reconcile service
+	newService := generateService(instance)
+
+	// Set NginxIngress instance as the owner and controller
+	if err := controllerutil.SetControllerReference(instance, &newService, r.scheme); err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		return reconcile.Result{}, err
+	}
+
+	foundService := &corev1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newService.Name, Namespace: newService.Namespace}, foundService)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a new Service", "Namespace", newService.Namespace, "Name", newService.Name)
+		err = r.client.Create(context.TODO(), &newService)
+		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			return reconcile.Result{}, err
+		}
 	} else if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
@@ -136,49 +161,4 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 	// Deployment already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Deployment already exists", "Namespace", foundDeployment.Namespace, "Name", foundDeployment.Name)
 	return reconcile.Result{}, nil
-}
-
-func newDeployment(cr *appv1alpha1.NginxIngress) *v1.Deployment {
-
-	// add arguments for default command
-	args := []string{}
-
-	return &v1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name,
-			Namespace: cr.ObjectMeta.Namespace,
-			Labels:    baseLabels(cr),
-		},
-		Spec: v1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: baseLabels(cr),
-			},
-			Strategy: v1.DeploymentStrategy{Type: v1.RollingUpdateDeploymentStrategyType, RollingUpdate: nil},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: mergeMaps(baseLabels(cr),
-						map[string]string{"app.improvado.io/component": "deployment"},
-					),
-					Annotations: setAnnotations(cr, cr.Annotations),
-				},
-
-				Spec: corev1.PodSpec{
-					ServiceAccountName: cr.Spec.ServiceAccount,
-					Containers: []corev1.Container{
-						{
-							Name:  "nginx",
-							Image: cr.Spec.NginxController.Image.Repository + ":" + cr.Spec.NginxController.Image.Tag,
-							Args:  args,
-							Ports: []corev1.ContainerPort{
-								{
-									ContainerPort: 80,
-								},
-							},
-							Env: append(returnDefaultENV(), cr.Spec.NginxController.Env...),
-						},
-					},
-				},
-			},
-		},
-	}
 }

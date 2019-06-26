@@ -28,10 +28,10 @@ type NginxControllerSpec struct {
 	Labels         map[string]string `json:"labels,omitempty"`
 	Headers        string            `json:"headers,omitempty"`
 	HostNetwork    bool              `json:"hostNetwork,omitempty"`
-	ConfigMap      string            `json:"configmap"`
-	ConfigMapNginx string            `json:"configmapNginx"`
-	ConfigMapTCP   string            `json:"configmapTCP"`
-	ConfigMapUDP   string            `json:"configmapUDP"`
+	ConfigMap      string            `json:"configmap,omitempty"`
+	ConfigMapNginx string            `json:"configmapNginx,omitempty"`
+	ConfigMapTCP   string            `json:"configmapTCP,omitempty"`
+	ConfigMapUDP   string            `json:"configmapUDP,omitempty"`
 	WatchNamespace string            `json:"watchNamespace,omitempty"`
 
 	PriorityClassName     string       `json:"priorityClassName.omitempty"`

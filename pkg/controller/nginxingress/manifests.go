@@ -7,6 +7,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func generateConfigmap(cr *appv1alpha1.NginxIngress, configmapName string) corev1.ConfigMap {
+	data := cr.Spec.NginxController.Config
+
+	return corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      configmapName,
+			Namespace: cr.Namespace,
+		},
+		Data: data,
+	}
+}
+
 func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 	labels := map[string]string{
 		"app.improvado.io/component": "service",
@@ -35,24 +47,37 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 	if cr.Spec.NginxController.DefaultBackendService != "" {
 		args = append(args, "--default-backend-service="+cr.Spec.NginxController.DefaultBackendService)
 	}
+
 	if cr.Spec.NginxController.ElectionID != "" {
 		args = append(args, "--election-id="+cr.Spec.NginxController.ElectionID)
+	} else {
+		args = append(args, "--election-id=ingress-leader-election-"+cr.Name)
 	}
+
 	if cr.Spec.NginxController.IngressClass != "" {
 		args = append(args, "--ingress-class="+cr.Spec.NginxController.IngressClass)
+	} else {
+		args = append(args, "--ingress-class=ingress-class-"+cr.Name)
 	}
+
 	if cr.Spec.NginxController.ConfigMap != "" {
 		args = append(args, "--configmap="+cr.Spec.NginxController.ConfigMap)
+	} else {
+		args = append(args, "--configmap="+cr.Name)
 	}
+
 	if cr.Spec.NginxController.ConfigMapNginx != "" {
 		args = append(args, "--nginx-configmap="+cr.Spec.NginxController.ConfigMapNginx)
 	}
+
 	if cr.Spec.NginxController.ConfigMapTCP != "" {
 		args = append(args, "--tcp-services-configmap="+cr.Spec.NginxController.ConfigMapTCP)
 	}
+
 	if cr.Spec.NginxController.ConfigMapUDP != "" {
 		args = append(args, "--udp-services-configmap="+cr.Spec.NginxController.ConfigMapUDP)
 	}
+
 	if cr.Spec.NginxController.WatchNamespace != "" {
 		args = append(args, "--watch-namespace="+cr.Spec.NginxController.WatchNamespace)
 	}

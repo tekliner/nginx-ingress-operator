@@ -15,7 +15,8 @@ spec:
       pullPolicy: IfNotPresent
     config:
       use-proxy-protocol: "true"
-      http2-max-field-size: 16k
+      http2-max-field-size: 8k
+    configmap: test-ingress
   service:
     type: LoadBalancer
     ports:

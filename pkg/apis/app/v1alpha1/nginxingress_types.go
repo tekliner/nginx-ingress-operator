@@ -16,6 +16,22 @@ type DefaultBackend struct {
 	Image ImageSpec `json:"image"`
 }
 
+type MetricsServiceSpecs struct {
+	Port        int32             `json:"port,omitempty"`
+	Type        v1.ServiceType    `json:"serviceType,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+type StatsSpec struct {
+	Port int32 `json:"port,omitempty"`
+}
+
+type IngressServiceSpec struct {
+	Type                  v1.ServiceType                      `json:"serviceType,omitempty"`
+	ExternalTrafficPolicy v1.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
+	Annotations           map[string]string                   `json:"annotations,omitempty"`
+}
+
 type NginxControllerSpec struct {
 	Image      ImageSpec   `json:"image,omitempty"` // default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
 	Env        []v1.EnvVar `json:"env"`
@@ -47,10 +63,12 @@ type NginxIngressSpec struct {
 
 	Replicas int32 `json:"replicas"`
 
-	NginxController         NginxControllerSpec `json:"nginxController"`
-	DefaultBackend          DefaultBackend      `json:"defaultBackend,omitempty"`
-	NginxServiceSpec        v1.ServiceSpec      `json:"service"`
-	NginxServiceAnnotations map[string]string   `json:"serviceAnnotations,omitempty"`
+	Metrics                 *MetricsServiceSpecs `json:"metrics,omitempty"`
+	Stats                   *StatsSpec           `json:"stats,omitempty"`
+	NginxController         NginxControllerSpec  `json:"nginxController"`
+	DefaultBackend          DefaultBackend       `json:"defaultBackend,omitempty"`
+	NginxServiceSpec        v1.ServiceSpec       `json:"service"`
+	NginxServiceAnnotations map[string]string    `json:"serviceAnnotations,omitempty"`
 
 	ServiceAccount string `json:"serviceAccount"`
 }

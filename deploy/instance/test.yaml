@@ -15,20 +15,12 @@ spec:
       pullPolicy: IfNotPresent
     config:
       use-proxy-protocol: "true"
-      http2-max-field-size: 8k
+      http2-max-field-size: 16k
     configmap: test-ingress
-  # service:
-  #   type: LoadBalancer
-  #   ports:
-  #     - name: http
-  #       port: 80
-  #       protocol: TCP
-  #       targetPort: 80
-  #     - name: https
-  #       port: 443
-  #       protocol: TCP
-  #       targetPort: 443
+  stats: 
+    port: 9903
   metrics:
+    port: 9902
     annotations:
       "prometheus.io/scrape": "true"
       "prometheus.io/port": "10254"

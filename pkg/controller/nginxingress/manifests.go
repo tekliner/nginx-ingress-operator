@@ -29,7 +29,7 @@ func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 
 	service := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        cr.Name,
+			Name:        cr.Name + "-metrics",
 			Namespace:   cr.Namespace,
 			Labels:      labels,
 			Annotations: mergeMaps(cr.Spec.Metrics.Annotations, annotations),
@@ -43,7 +43,7 @@ func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 			Name:       "exporter",
 			Port:       cr.Spec.Metrics.Port,
 			Protocol:   corev1.ProtocolTCP,
-			TargetPort: intstr.IntOrString{StrVal: "metrics"},
+			TargetPort: intstr.FromString("metrics"),
 		},
 	}
 
@@ -61,7 +61,7 @@ func generateServiceStats(cr *appv1alpha1.NginxIngress) corev1.Service {
 
 	service := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        cr.Name,
+			Name:        cr.Name + "-stats",
 			Namespace:   cr.Namespace,
 			Labels:      labels,
 			Annotations: mergeMaps(cr.Spec.Metrics.Annotations, annotations),
@@ -73,9 +73,9 @@ func generateServiceStats(cr *appv1alpha1.NginxIngress) corev1.Service {
 	service.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:       "stats",
-			Port:       cr.Spec.Metrics.Port,
+			Port:       cr.Spec.Stats.Port,
 			Protocol:   corev1.ProtocolTCP,
-			TargetPort: intstr.IntOrString{StrVal: "stats"},
+			TargetPort: intstr.FromString("stats"),
 		},
 	}
 
@@ -104,13 +104,13 @@ func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 		{
 			Name:       "http",
 			Port:       80,
-			TargetPort: intstr.IntOrString{StrVal: "http"},
+			TargetPort: intstr.FromString("http"),
 			Protocol:   corev1.ProtocolTCP,
 		},
 		{
 			Name:       "https",
 			Port:       443,
-			TargetPort: intstr.IntOrString{StrVal: "https"},
+			TargetPort: intstr.FromString("https"),
 			Protocol:   corev1.ProtocolTCP,
 		},
 	}
@@ -182,7 +182,7 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 	if cr.Spec.Metrics != nil {
 		metricsPort := corev1.ContainerPort{
 			Name:          "metrics",
-			ContainerPort: cr.Spec.Metrics.Port,
+			ContainerPort: 10254,
 			Protocol:      corev1.ProtocolTCP,
 		}
 		ports = append(ports, metricsPort)
@@ -191,7 +191,7 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 	if cr.Spec.Stats != nil {
 		statsPort := corev1.ContainerPort{
 			Name:          "stats",
-			ContainerPort: cr.Spec.Stats.Port,
+			ContainerPort: 18080,
 			Protocol:      corev1.ProtocolTCP,
 		}
 		ports = append(ports, statsPort)

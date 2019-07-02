@@ -18,7 +18,6 @@ type DefaultBackend struct {
 
 type MetricsServiceSpecs struct {
 	Port        int32             `json:"port,omitempty"`
-	Type        v1.ServiceType    `json:"serviceType,omitempty"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 

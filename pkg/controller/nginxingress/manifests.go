@@ -5,6 +5,7 @@ import (
 	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func generateConfigmap(cr *appv1alpha1.NginxIngress, configmapName string) corev1.ConfigMap {
@@ -19,6 +20,70 @@ func generateConfigmap(cr *appv1alpha1.NginxIngress, configmapName string) corev
 	}
 }
 
+func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
+	labels := map[string]string{
+		"app.improvado.io/component": "service",
+	}
+
+	annotations := map[string]string{}
+
+	service := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cr.Name + "-metrics",
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: mergeMaps(cr.Spec.Metrics.Annotations, annotations),
+		},
+	}
+
+	service.Spec.Type = corev1.ServiceTypeClusterIP
+
+	service.Spec.Ports = []corev1.ServicePort{
+		{
+			Name:       "exporter",
+			Port:       cr.Spec.Metrics.Port,
+			Protocol:   corev1.ProtocolTCP,
+			TargetPort: intstr.FromString("metrics"),
+		},
+	}
+
+	service.Spec.Selector = baseLabels(cr)
+
+	return service
+}
+
+func generateServiceStats(cr *appv1alpha1.NginxIngress) corev1.Service {
+	labels := map[string]string{
+		"app.improvado.io/component": "service",
+	}
+
+	annotations := map[string]string{}
+
+	service := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cr.Name + "-stats",
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: mergeMaps(cr.Spec.Metrics.Annotations, annotations),
+		},
+	}
+
+	service.Spec.Type = corev1.ServiceTypeClusterIP
+
+	service.Spec.Ports = []corev1.ServicePort{
+		{
+			Name:       "stats",
+			Port:       cr.Spec.Stats.Port,
+			Protocol:   corev1.ProtocolTCP,
+			TargetPort: intstr.FromString("stats"),
+		},
+	}
+
+	service.Spec.Selector = baseLabels(cr)
+
+	return service
+}
+
 func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 	labels := map[string]string{
 		"app.improvado.io/component": "service",
@@ -31,7 +96,23 @@ func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 			Labels:      labels,
 			Annotations: cr.Spec.NginxServiceAnnotations,
 		},
-		Spec: cr.Spec.NginxServiceSpec,
+	}
+
+	service.Spec.Type = corev1.ServiceTypeLoadBalancer
+
+	service.Spec.Ports = []corev1.ServicePort{
+		{
+			Name:       "http",
+			Port:       80,
+			TargetPort: intstr.FromString("http"),
+			Protocol:   corev1.ProtocolTCP,
+		},
+		{
+			Name:       "https",
+			Port:       443,
+			TargetPort: intstr.FromString("https"),
+			Protocol:   corev1.ProtocolTCP,
+		},
 	}
 
 	service.Spec.Selector = baseLabels(cr)
@@ -85,6 +166,37 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 	// add custom arguments from CR
 	args = append(args, cr.Spec.NginxController.CustomArgs...)
 
+	ports := []corev1.ContainerPort{
+		{
+			Name:          "http",
+			ContainerPort: 80,
+			Protocol:      corev1.ProtocolTCP,
+		},
+		{
+			Name:          "https",
+			ContainerPort: 443,
+			Protocol:      corev1.ProtocolTCP,
+		},
+	}
+
+	if cr.Spec.Metrics != nil {
+		metricsPort := corev1.ContainerPort{
+			Name:          "metrics",
+			ContainerPort: 10254,
+			Protocol:      corev1.ProtocolTCP,
+		}
+		ports = append(ports, metricsPort)
+	}
+
+	if cr.Spec.Stats != nil {
+		statsPort := corev1.ContainerPort{
+			Name:          "stats",
+			ContainerPort: 18080,
+			Protocol:      corev1.ProtocolTCP,
+		}
+		ports = append(ports, statsPort)
+	}
+
 	deployment := v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -117,12 +229,8 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 							Name:  "nginx-ingress",
 							Image: cr.Spec.NginxController.Image.Repository + ":" + cr.Spec.NginxController.Image.Tag,
 							Args:  args,
-							Ports: []corev1.ContainerPort{
-								{
-									ContainerPort: 80,
-								},
-							},
-							Env: append(returnDefaultENV(), cr.Spec.NginxController.Env...),
+							Ports: ports,
+							Env:   append(returnDefaultENV(), cr.Spec.NginxController.Env...),
 						},
 					},
 				},

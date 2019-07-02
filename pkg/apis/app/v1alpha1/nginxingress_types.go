@@ -11,9 +11,24 @@ type ImageSpec struct {
 	PullPolicy string `json:"pullPolicy,omitempty"`
 }
 
-type DefaultBackend struct {
+type DefaultBackendSpec struct {
 	Name  string    `json:"name"`
 	Image ImageSpec `json:"image"`
+}
+
+type MetricsServiceSpecs struct {
+	Port        int32             `json:"port,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+type StatsSpec struct {
+	Port int32 `json:"port,omitempty"`
+}
+
+type IngressServiceSpec struct {
+	Type                  v1.ServiceType                      `json:"serviceType,omitempty"`
+	ExternalTrafficPolicy v1.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
+	Annotations           map[string]string                   `json:"annotations,omitempty"`
 }
 
 type NginxControllerSpec struct {
@@ -47,10 +62,12 @@ type NginxIngressSpec struct {
 
 	Replicas int32 `json:"replicas"`
 
-	NginxController         NginxControllerSpec `json:"nginxController"`
-	DefaultBackend          DefaultBackend      `json:"defaultBackend,omitempty"`
-	NginxServiceSpec        v1.ServiceSpec      `json:"service"`
-	NginxServiceAnnotations map[string]string   `json:"serviceAnnotations,omitempty"`
+	Metrics                 *MetricsServiceSpecs `json:"metrics,omitempty"`
+	Stats                   *StatsSpec           `json:"stats,omitempty"`
+	NginxController         NginxControllerSpec  `json:"nginxController"`
+	DefaultBackend          DefaultBackendSpec   `json:"defaultBackend,omitempty"`
+	NginxServiceSpec        v1.ServiceSpec       `json:"service"`
+	NginxServiceAnnotations map[string]string    `json:"serviceAnnotations,omitempty"`
 
 	ServiceAccount string `json:"serviceAccount"`
 }

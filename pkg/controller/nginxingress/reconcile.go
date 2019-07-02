@@ -11,14 +11,8 @@ func reconcileDeployment(foundDeployment v1.Deployment, newDeployment v1.Deploym
 
 	reconcileRequired := false
 
-	if !reflect.DeepEqual(foundDeployment.Spec, newDeployment.Spec) {
+	if !reflect.DeepEqual(foundDeployment.Spec.Replicas, newDeployment.Spec.Replicas) {
 		foundDeployment.Spec.Replicas = newDeployment.Spec.Replicas
-		foundDeployment.Spec.Template = newDeployment.Spec.Template
-		reconcileRequired = true
-	}
-
-	if !reflect.DeepEqual(foundDeployment.Annotations, newDeployment.Annotations) {
-		foundDeployment.Annotations = newDeployment.Annotations
 		reconcileRequired = true
 	}
 
@@ -35,13 +29,18 @@ func reconcileService(foundService corev1.Service, newService corev1.Service) (b
 
 	reconcileRequired := false
 
-	if !reflect.DeepEqual(foundService.Spec, newService.Spec) {
+	if !reflect.DeepEqual(foundService.Spec.Ports, newService.Spec.Ports) {
 		foundService.Spec.Ports = newService.Spec.Ports
 		reconcileRequired = true
 	}
 
-	if !reflect.DeepEqual(foundService.Annotations, newService.Annotations) {
-		foundService.Annotations = newService.Annotations
+	if !reflect.DeepEqual(foundService.Spec.Type, newService.Spec.Type) {
+		foundService.Spec.Type = newService.Spec.Type
+		reconcileRequired = true
+	}
+
+	if !reflect.DeepEqual(foundService.Spec.ExternalTrafficPolicy, newService.Spec.ExternalTrafficPolicy) {
+		foundService.Spec.Type = newService.Spec.Type
 		reconcileRequired = true
 	}
 
@@ -58,11 +57,6 @@ func reconcileConfigmap(foundConfigmap corev1.ConfigMap, newConfigmap corev1.Con
 
 	if !reflect.DeepEqual(foundConfigmap.Data, newConfigmap.Data) {
 		foundConfigmap.Data = newConfigmap.Data
-		reconcileRequired = true
-	}
-
-	if !reflect.DeepEqual(foundConfigmap.Annotations, newConfigmap.Annotations) {
-		foundConfigmap.Annotations = newConfigmap.Annotations
 		reconcileRequired = true
 	}
 

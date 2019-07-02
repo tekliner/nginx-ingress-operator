@@ -25,14 +25,12 @@ func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 		"app.improvado.io/component": "service",
 	}
 
-	annotations := map[string]string{}
-
 	service := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        cr.Name + "-metrics",
 			Namespace:   cr.Namespace,
 			Labels:      labels,
-			Annotations: mergeMaps(cr.Spec.Metrics.Annotations, annotations),
+			Annotations: cr.Spec.Metrics.Annotations,
 		},
 	}
 
@@ -57,14 +55,12 @@ func generateServiceStats(cr *appv1alpha1.NginxIngress) corev1.Service {
 		"app.improvado.io/component": "service",
 	}
 
-	annotations := map[string]string{}
-
 	service := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        cr.Name + "-stats",
 			Namespace:   cr.Namespace,
 			Labels:      labels,
-			Annotations: mergeMaps(cr.Spec.Metrics.Annotations, annotations),
+			Annotations: cr.Spec.Metrics.Annotations,
 		},
 	}
 
@@ -139,6 +135,12 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 		args = append(args, "--ingress-class="+cr.Spec.NginxController.IngressClass)
 	} else {
 		args = append(args, "--ingress-class=ingress-class-"+cr.Name)
+	}
+
+	if cr.Spec.NginxController.PublishService && cr.Spec.NginxController.PublishServicePath != "" {
+		args = append(args, "--publish-service="+cr.Spec.NginxController.PublishServicePath)
+	} else if cr.Spec.NginxController.PublishService {
+		args = append(args, "--publish-service="+cr.Namespace+"/"+cr.Name+"-controller")
 	}
 
 	if cr.Spec.NginxController.ConfigMap != "" {

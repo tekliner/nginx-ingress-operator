@@ -11,7 +11,7 @@ type ImageSpec struct {
 	PullPolicy string `json:"pullPolicy,omitempty"`
 }
 
-type DefaultBackend struct {
+type DefaultBackendSpec struct {
 	Name  string    `json:"name"`
 	Image ImageSpec `json:"image"`
 }
@@ -65,7 +65,7 @@ type NginxIngressSpec struct {
 	Metrics                 *MetricsServiceSpecs `json:"metrics,omitempty"`
 	Stats                   *StatsSpec           `json:"stats,omitempty"`
 	NginxController         NginxControllerSpec  `json:"nginxController"`
-	DefaultBackend          DefaultBackend       `json:"defaultBackend,omitempty"`
+	DefaultBackend          DefaultBackendSpec   `json:"defaultBackend,omitempty"`
 	NginxServiceSpec        v1.ServiceSpec       `json:"service"`
 	NginxServiceAnnotations map[string]string    `json:"serviceAnnotations,omitempty"`
 

@@ -131,7 +131,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	if ready, reconDeployment := reconcileDeployment(foundDeployment, newDeployment); ready {
+	if readyToReconcile, reconDeployment := reconcileDeployment(foundDeployment, newDeployment); readyToReconcile {
 		if err = r.client.Update(context.TODO(), &reconDeployment); err != nil {
 			reqLogger.Info("Reconcile deployment error", "Namespace", foundDeployment.Namespace, "Name", foundDeployment.Name)
 			raven.CaptureErrorAndWait(err, nil)
@@ -162,7 +162,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	if ready, reconService := reconcileService(foundService, newService); ready {
+	if readyToReconcile, reconService := reconcileService(foundService, newService); readyToReconcile {
 		if err = r.client.Update(context.TODO(), &reconService); err != nil {
 			reqLogger.Info("Reconcile service error", "Namespace", foundService.Namespace, "Name", foundService.Name)
 			raven.CaptureErrorAndWait(err, nil)
@@ -194,7 +194,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			return reconcile.Result{}, err
 		}
 
-		if ready, reconService := reconcileService(foundService, newService); ready {
+		if readyToReconcile, reconService := reconcileService(foundService, newService); readyToReconcile {
 			if err = r.client.Update(context.TODO(), &reconService); err != nil {
 				reqLogger.Info("Reconcile metrics Service error", "Namespace", foundService.Namespace, "Name", foundService.Name)
 				raven.CaptureErrorAndWait(err, nil)
@@ -227,7 +227,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			return reconcile.Result{}, err
 		}
 
-		if ready, reconService := reconcileService(foundService, newService); ready {
+		if readyToReconcile, reconService := reconcileService(foundService, newService); readyToReconcile {
 			if err = r.client.Update(context.TODO(), &reconService); err != nil {
 				reqLogger.Info("Reconcile stats Service error", "Namespace", foundService.Namespace, "Name", foundService.Name)
 				raven.CaptureErrorAndWait(err, nil)
@@ -265,7 +265,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	if ready, reconConfigmap := reconcileConfigmap(foundConfigmap, newConfigmap); ready {
+	if readyToReconcile, reconConfigmap := reconcileConfigmap(foundConfigmap, newConfigmap); readyToReconcile {
 		if err = r.client.Update(context.TODO(), &reconConfigmap); err != nil {
 			reqLogger.Info("Reconcile configmap error", "Namespace", foundConfigmap.Namespace, "Name", foundConfigmap.Name)
 			raven.CaptureErrorAndWait(err, nil)

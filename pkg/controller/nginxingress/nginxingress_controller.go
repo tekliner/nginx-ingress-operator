@@ -137,7 +137,6 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("Checking Deployment", "OLD", foundDeployment, "NEW", newDeployment)
 	if readyToReconcile, reconDeployment := reconcileDeployment(foundDeployment, newDeployment); readyToReconcile {
 		reqLogger.Info("Updating Deployment", "Namespace", reconDeployment.Namespace, "Name", reconDeployment.Name)
 		if err = r.client.Update(context.TODO(), &reconDeployment); err != nil {

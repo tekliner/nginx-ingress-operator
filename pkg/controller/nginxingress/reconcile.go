@@ -11,9 +11,8 @@ func reconcileDeployment(foundDeployment v1.Deployment, newDeployment v1.Deploym
 
 	reconcileRequired := false
 
-	if !reflect.DeepEqual(foundDeployment.Spec, newDeployment.Spec) {
+	if !reflect.DeepEqual(foundDeployment.Spec.Replicas, newDeployment.Spec.Replicas) {
 		foundDeployment.Spec.Replicas = newDeployment.Spec.Replicas
-		foundDeployment.Spec.Template = newDeployment.Spec.Template
 		reconcileRequired = true
 	}
 

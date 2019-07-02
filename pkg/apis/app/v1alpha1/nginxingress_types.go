@@ -32,22 +32,25 @@ type IngressServiceSpec struct {
 }
 
 type NginxControllerSpec struct {
-	Image      ImageSpec   `json:"image,omitempty"` // default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
+	// default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
+	Image      ImageSpec   `json:"image,omitempty"`
 	Env        []v1.EnvVar `json:"env"`
 	ElectionID string      `json:"electionID"`
 	CustomArgs []string    `json:"customArgs,omitempty"`
 	RunAsUser  int64       `json:"runAsUser,omitempty"` // default 33
 
 	// nginx configuration
-	Config         map[string]string `json:"config,omitempty"`
-	Labels         map[string]string `json:"labels,omitempty"`
-	Headers        string            `json:"headers,omitempty"`
-	HostNetwork    bool              `json:"hostNetwork,omitempty"`
-	ConfigMap      string            `json:"configmap,omitempty"`
-	ConfigMapNginx string            `json:"configmapNginx,omitempty"`
-	ConfigMapTCP   string            `json:"configmapTCP,omitempty"`
-	ConfigMapUDP   string            `json:"configmapUDP,omitempty"`
-	WatchNamespace string            `json:"watchNamespace,omitempty"`
+	Config             map[string]string `json:"config,omitempty"`
+	Labels             map[string]string `json:"labels,omitempty"`
+	Headers            string            `json:"headers,omitempty"`
+	HostNetwork        bool              `json:"hostNetwork,omitempty"`
+	ConfigMap          string            `json:"configmap,omitempty"`
+	ConfigMapNginx     string            `json:"configmapNginx,omitempty"`
+	ConfigMapTCP       string            `json:"configmapTCP,omitempty"`
+	ConfigMapUDP       string            `json:"configmapUDP,omitempty"`
+	WatchNamespace     string            `json:"watchNamespace,omitempty"`
+	PublishService     bool              `json:"publishService,omitempty"`
+	PublishServicePath string            `json:"publishServicePath,omitempty"` // override generated value
 
 	PriorityClassName     string       `json:"priorityClassName.omitempty"`
 	DefaultBackendService string       `json:"defaultBackendService,omitempty"`

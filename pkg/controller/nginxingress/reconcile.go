@@ -34,11 +34,6 @@ func reconcileService(foundService corev1.Service, newService corev1.Service) (b
 		reconcileRequired = true
 	}
 
-	if !reflect.DeepEqual(foundService.Spec.ClusterIP, newService.Spec.ClusterIP) {
-		foundService.Spec.ClusterIP = newService.Spec.ClusterIP
-		reconcileRequired = true
-	}
-
 	if !reflect.DeepEqual(foundService.Spec.Type, newService.Spec.Type) {
 		foundService.Spec.Type = newService.Spec.Type
 		reconcileRequired = true

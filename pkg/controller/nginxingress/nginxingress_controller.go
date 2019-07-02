@@ -165,7 +165,6 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		foundService.Annotations = newService.Annotations
 		foundService.Spec.Ports = newService.Spec.Ports
 		foundService.Spec.Type = newService.Spec.Type
-		foundService.Spec.ClusterIP = newService.Spec.ClusterIP
 		foundService.Spec.ExternalTrafficPolicy = newService.Spec.ExternalTrafficPolicy
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
@@ -205,7 +204,6 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			foundService.Annotations = newService.Annotations
 			foundService.Spec.Ports = newService.Spec.Ports
 			foundService.Spec.Type = newService.Spec.Type
-			foundService.Spec.ClusterIP = newService.Spec.ClusterIP
 			foundService.Spec.ExternalTrafficPolicy = newService.Spec.ExternalTrafficPolicy
 			if err != nil {
 				raven.CaptureErrorAndWait(err, nil)
@@ -246,7 +244,6 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			foundService.Annotations = newService.Annotations
 			foundService.Spec.Ports = newService.Spec.Ports
 			foundService.Spec.Type = newService.Spec.Type
-			foundService.Spec.ClusterIP = newService.Spec.ClusterIP
 			foundService.Spec.ExternalTrafficPolicy = newService.Spec.ExternalTrafficPolicy
 			if err != nil {
 				raven.CaptureErrorAndWait(err, nil)

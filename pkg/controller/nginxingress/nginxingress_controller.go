@@ -50,12 +50,14 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
 	c, err := controller.New("nginxingress-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		return err
 	}
 
 	// Watch for changes to primary resource NginxIngress
 	err = c.Watch(&source.Kind{Type: &appv1alpha1.NginxIngress{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		return err
 	}
 
@@ -66,6 +68,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		OwnerType:    &appv1alpha1.NginxIngress{},
 	})
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		return err
 	}
 

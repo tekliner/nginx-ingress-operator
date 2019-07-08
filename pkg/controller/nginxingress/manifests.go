@@ -283,6 +283,7 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 
 func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 
+	// TODO: fix args in controller deployment
 	name := cr.Name + "-default-backend"
 	if cr.Spec.DefaultBackend.Name != "" {
 		name = cr.Spec.DefaultBackend.Name

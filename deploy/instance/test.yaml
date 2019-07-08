@@ -8,6 +8,8 @@ spec:
   serviceAccount: nginx-ingress-operator
   defaultBackend:
     name: pukipu
+    port: 8080
+    replicas: 1
     image:
       repository: k8s.gcr.io/defaultbackend-amd64
       tag: "1.5"

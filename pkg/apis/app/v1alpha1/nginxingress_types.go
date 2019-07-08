@@ -12,7 +12,7 @@ type ImageSpec struct {
 }
 
 type DefaultBackendSpec struct {
-	Name               string             `json:"name"`
+	Name               string             `json:"name,omitempty"`
 	Image              ImageSpec          `json:"image"`
 	CustomArgs         []string           `json:"customArgs,omitempty"`
 	RunAsUser          *int64             `json:"runAsUser,omitempty"` // default 0

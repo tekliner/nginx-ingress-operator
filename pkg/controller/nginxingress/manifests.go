@@ -121,7 +121,9 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 	// compile arguments from CR
 	args := []string{"/nginx-ingress-controller"}
 
-	if cr.Spec.NginxController.DefaultBackendService != "" {
+	if cr.Spec.DefaultBackend != nil {
+		args = append(args, "--default-backend-service="+cr.Name+"-default-backend")
+	} else if cr.Spec.NginxController.DefaultBackendService != "" {
 		args = append(args, "--default-backend-service="+cr.Spec.NginxController.DefaultBackendService)
 	}
 
@@ -241,4 +243,91 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 	}
 
 	return deployment
+}
+
+func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
+	// add custom arguments from CR
+	args := append([]string{}, cr.Spec.DefaultBackend.CustomArgs...)
+
+	ports := []corev1.ContainerPort{
+		{
+			Name:          "http",
+			ContainerPort: cr.Spec.DefaultBackend.Port,
+			Protocol:      corev1.ProtocolTCP,
+		},
+	}
+
+	deployment := v1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name + "-default-backend",
+			Namespace: cr.ObjectMeta.Namespace,
+			Labels:    baseLabels(cr),
+		},
+		Spec: v1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: baseLabels(cr),
+			},
+			Replicas: &cr.Spec.Replicas,
+			Strategy: v1.DeploymentStrategy{
+				Type:          v1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: nil,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: mergeMaps(baseLabels(cr),
+						map[string]string{"app.improvado.io/component": "defaultbackend"},
+					),
+					Annotations: setAnnotations(cr, cr.Spec.DefaultBackend.Annotations),
+				},
+
+				Spec: corev1.PodSpec{
+					ServiceAccountName: cr.Spec.ServiceAccount,
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsUser: &cr.Spec.DefaultBackend.RunAsUser,
+					},
+					Containers: []corev1.Container{
+						{
+							Name:  "nginx-ingress",
+							Image: cr.Spec.DefaultBackend.Image.Repository + ":" + cr.Spec.DefaultBackend.Image.Tag,
+							Args:  args,
+							Ports: ports,
+							Env:   append(returnDefaultENV(), cr.Spec.DefaultBackend.Env...),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return deployment
+}
+
+func generateDefaultBackendService(cr *appv1alpha1.NginxIngress) corev1.Service {
+	labels := map[string]string{
+		"app.improvado.io/component": "service",
+	}
+
+	service := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        cr.Name,
+			Namespace:   cr.Namespace,
+			Labels:      labels,
+			Annotations: cr.Spec.DefaultBackend.ServiceAnnotations,
+		},
+	}
+
+	service.Spec.Type = corev1.ServiceTypeLoadBalancer
+
+	service.Spec.Ports = []corev1.ServicePort{
+		{
+			Name:       "http",
+			Port:       cr.Spec.DefaultBackend.Port,
+			TargetPort: intstr.FromString("http"),
+			Protocol:   corev1.ProtocolTCP,
+		},
+	}
+
+	service.Spec.Selector = baseLabels(cr)
+
+	return service
 }

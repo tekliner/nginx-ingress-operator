@@ -12,8 +12,18 @@ type ImageSpec struct {
 }
 
 type DefaultBackendSpec struct {
-	Name  string    `json:"name"`
-	Image ImageSpec `json:"image"`
+	Name               string            `json:"name"`
+	Image              ImageSpec         `json:"image"`
+	CustomArgs         []string          `json:"customArgs,omitempty"`
+	RunAsUser          int64             `json:"runAsUser,omitempty"` // default 33
+	Env                []v1.EnvVar       `json:"env"`
+	Port               int32             `json:"port,omitempty"`
+	Affinity           *v1.Affinity      `json:"affinity,omitempty"`
+	Replicas           int32             `json:"replicas"`
+	Annotations        map[string]string `json:"annotations,omitempty"`
+	PodRequests        v1.ResourceList   `json:"pod_requests,omitempty"`
+	PodLimits          v1.ResourceList   `json:"pod_limits,omitempty"`
+	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
 }
 
 type MetricsServiceSpecs struct {
@@ -33,11 +43,12 @@ type IngressServiceSpec struct {
 
 type NginxControllerSpec struct {
 	// default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
-	Image      ImageSpec   `json:"image,omitempty"`
-	Env        []v1.EnvVar `json:"env"`
-	ElectionID string      `json:"electionID"`
-	CustomArgs []string    `json:"customArgs,omitempty"`
-	RunAsUser  int64       `json:"runAsUser,omitempty"` // default 33
+	Image      ImageSpec    `json:"image,omitempty"`
+	Env        []v1.EnvVar  `json:"env"`
+	ElectionID string       `json:"electionID"`
+	CustomArgs []string     `json:"customArgs,omitempty"`
+	RunAsUser  int64        `json:"runAsUser,omitempty"` // default 33
+	Affinity   *v1.Affinity `json:"affinity,omitempty"`
 
 	// nginx configuration
 	Config             map[string]string `json:"config,omitempty"`
@@ -68,7 +79,7 @@ type NginxIngressSpec struct {
 	Metrics                 *MetricsServiceSpecs `json:"metrics,omitempty"`
 	Stats                   *StatsSpec           `json:"stats,omitempty"`
 	NginxController         NginxControllerSpec  `json:"nginxController"`
-	DefaultBackend          DefaultBackendSpec   `json:"defaultBackend,omitempty"`
+	DefaultBackend          *DefaultBackendSpec  `json:"defaultBackend,omitempty"`
 	NginxServiceSpec        v1.ServiceSpec       `json:"service"`
 	NginxServiceAnnotations map[string]string    `json:"serviceAnnotations,omitempty"`
 

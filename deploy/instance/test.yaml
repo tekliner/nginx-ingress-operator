@@ -6,6 +6,12 @@ metadata:
 spec:
   replicas: 1
   serviceAccount: nginx-ingress-operator
+  defaultBackend:
+    name: pukipu
+    image:
+      repository: k8s.gcr.io/defaultbackend-amd64
+      tag: "1.5"
+      pullPolicy: IfNotPresent
   nginxController:
     ingressClass: testicula
     runAsUser: 33

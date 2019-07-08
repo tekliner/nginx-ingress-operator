@@ -12,43 +12,45 @@ type ImageSpec struct {
 }
 
 type DefaultBackendSpec struct {
-	Name               string            `json:"name"`
-	Image              ImageSpec         `json:"image"`
-	CustomArgs         []string          `json:"customArgs,omitempty"`
-	RunAsUser          int64             `json:"runAsUser,omitempty"` // default 33
-	Env                []v1.EnvVar       `json:"env"`
-	Port               int32             `json:"port,omitempty"`
-	Affinity           *v1.Affinity      `json:"affinity,omitempty"`
-	Replicas           int32             `json:"replicas"`
-	Annotations        map[string]string `json:"annotations,omitempty"`
-	PodRequests        v1.ResourceList   `json:"pod_requests,omitempty"`
-	PodLimits          v1.ResourceList   `json:"pod_limits,omitempty"`
-	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
+	Name               string             `json:"name"`
+	Image              ImageSpec          `json:"image"`
+	CustomArgs         []string           `json:"customArgs,omitempty"`
+	RunAsUser          *int64             `json:"runAsUser,omitempty"` // default 0
+	Env                *[]v1.EnvVar       `json:"env,omitempty"`
+	Port               int32              `json:"port"`
+	Affinity           *v1.Affinity       `json:"affinity,omitempty"`
+	Replicas           int32              `json:"replicas"`
+	Annotations        *map[string]string `json:"annotations,omitempty"`
+	PodRequests        *v1.ResourceList   `json:"pod_requests,omitempty"`
+	PodLimits          *v1.ResourceList   `json:"pod_limits,omitempty"`
+	ServiceAnnotations *map[string]string `json:"serviceAnnotations,omitempty"`
 }
 
 type MetricsServiceSpecs struct {
-	Port        int32             `json:"port,omitempty"`
+	Port        int32             `json:"port"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 type StatsSpec struct {
-	Port int32 `json:"port,omitempty"`
+	Port int32 `json:"port"`
 }
 
 type IngressServiceSpec struct {
 	Type                  v1.ServiceType                      `json:"serviceType,omitempty"`
 	ExternalTrafficPolicy v1.ServiceExternalTrafficPolicyType `json:"externalTrafficPolicy,omitempty"`
-	Annotations           map[string]string                   `json:"annotations,omitempty"`
 }
 
 type NginxControllerSpec struct {
 	// default quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.24.1
-	Image      ImageSpec    `json:"image,omitempty"`
-	Env        []v1.EnvVar  `json:"env"`
-	ElectionID string       `json:"electionID"`
-	CustomArgs []string     `json:"customArgs,omitempty"`
-	RunAsUser  int64        `json:"runAsUser,omitempty"` // default 33
-	Affinity   *v1.Affinity `json:"affinity,omitempty"`
+	Image       ImageSpec          `json:"image"`
+	Env         *[]v1.EnvVar       `json:"env,omitempty"`
+	ElectionID  string             `json:"electionID"`
+	CustomArgs  []string           `json:"customArgs,omitempty"`
+	RunAsUser   *int64             `json:"runAsUser,omitempty"` // default 33
+	Affinity    *v1.Affinity       `json:"affinity,omitempty"`
+	PodRequests *v1.ResourceList   `json:"pod_requests,omitempty"`
+	PodLimits   *v1.ResourceList   `json:"pod_limits,omitempty"`
+	Annotations *map[string]string `json:"annotations,omitempty"`
 
 	// nginx configuration
 	Config             map[string]string `json:"config,omitempty"`

@@ -118,6 +118,37 @@ func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 
 func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 
+	runAsUser := int64(33)
+	if cr.Spec.NginxController.RunAsUser != nil {
+		runAsUser = *cr.Spec.NginxController.RunAsUser
+	}
+
+	env := []corev1.EnvVar{}
+	if cr.Spec.NginxController.Env != nil {
+		env = *cr.Spec.NginxController.Env
+	}
+
+	// check affinity rules
+	affinity := &corev1.Affinity{}
+	if cr.Spec.NginxController.Affinity != nil {
+		affinity = cr.Spec.NginxController.Affinity
+	}
+
+	annotations := map[string]string{}
+	if cr.Spec.NginxController.Annotations != nil {
+		annotations = *cr.Spec.NginxController.Annotations
+	}
+
+	resourcesLimits := corev1.ResourceList{}
+	if cr.Spec.NginxController.PodLimits != nil {
+		resourcesLimits = *cr.Spec.NginxController.PodLimits
+	}
+
+	resourcesRequests := corev1.ResourceList{}
+	if cr.Spec.NginxController.PodRequests != nil {
+		resourcesRequests = *cr.Spec.NginxController.PodRequests
+	}
+
 	// compile arguments from CR
 	args := []string{"/nginx-ingress-controller"}
 
@@ -218,15 +249,16 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 					Labels: mergeMaps(baseLabels(cr),
 						map[string]string{"app.improvado.io/component": "application"},
 					),
-					Annotations: setAnnotations(cr, cr.Annotations),
+					Annotations: annotations,
 				},
 
 				Spec: corev1.PodSpec{
+					Affinity:           affinity,
 					DNSPolicy:          cr.Spec.NginxController.DNSPolicy,
 					ServiceAccountName: cr.Spec.ServiceAccount,
 					PriorityClassName:  cr.Spec.NginxController.PriorityClassName,
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: &cr.Spec.NginxController.RunAsUser,
+						RunAsUser: &runAsUser,
 					},
 					Containers: []corev1.Container{
 						{
@@ -234,7 +266,11 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 							Image: cr.Spec.NginxController.Image.Repository + ":" + cr.Spec.NginxController.Image.Tag,
 							Args:  args,
 							Ports: ports,
-							Env:   append(returnDefaultENV(), cr.Spec.NginxController.Env...),
+							Env:   env,
+							Resources: corev1.ResourceRequirements{
+								Limits:   resourcesLimits,
+								Requests: resourcesRequests,
+							},
 						},
 					},
 				},
@@ -246,8 +282,45 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 }
 
 func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
+
+	name := cr.Name + "-default-backend"
+	if cr.Spec.DefaultBackend.Name != "" {
+		name = cr.Spec.DefaultBackend.Name
+	}
+
+	runAsUser := int64(0)
+	if cr.Spec.DefaultBackend.RunAsUser != nil {
+		runAsUser = *cr.Spec.DefaultBackend.RunAsUser
+	}
+
+	env := []corev1.EnvVar{}
+	if cr.Spec.DefaultBackend.Env != nil {
+		env = *cr.Spec.DefaultBackend.Env
+	}
+
+	// check affinity rules
+	affinity := &corev1.Affinity{}
+	if cr.Spec.DefaultBackend.Affinity != nil {
+		affinity = cr.Spec.DefaultBackend.Affinity
+	}
+
+	annotations := map[string]string{}
+	if cr.Spec.DefaultBackend.Annotations != nil {
+		annotations = *cr.Spec.DefaultBackend.Annotations
+	}
+
 	// add custom arguments from CR
 	args := append([]string{}, cr.Spec.DefaultBackend.CustomArgs...)
+
+	resourcesLimits := corev1.ResourceList{}
+	if cr.Spec.DefaultBackend.PodLimits != nil {
+		resourcesLimits = *cr.Spec.DefaultBackend.PodLimits
+	}
+
+	resourcesRequests := corev1.ResourceList{}
+	if cr.Spec.DefaultBackend.PodRequests != nil {
+		resourcesRequests = *cr.Spec.DefaultBackend.PodRequests
+	}
 
 	ports := []corev1.ContainerPort{
 		{
@@ -259,7 +332,7 @@ func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deploymen
 
 	deployment := v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-default-backend",
+			Name:      name,
 			Namespace: cr.ObjectMeta.Namespace,
 			Labels:    baseLabels(cr),
 		},
@@ -267,7 +340,7 @@ func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deploymen
 			Selector: &metav1.LabelSelector{
 				MatchLabels: baseLabels(cr),
 			},
-			Replicas: &cr.Spec.Replicas,
+			Replicas: &cr.Spec.DefaultBackend.Replicas,
 			Strategy: v1.DeploymentStrategy{
 				Type:          v1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: nil,
@@ -277,13 +350,13 @@ func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deploymen
 					Labels: mergeMaps(baseLabels(cr),
 						map[string]string{"app.improvado.io/component": "defaultbackend"},
 					),
-					Annotations: setAnnotations(cr, cr.Spec.DefaultBackend.Annotations),
+					Annotations: setAnnotations(cr, annotations),
 				},
-
 				Spec: corev1.PodSpec{
+					Affinity:           affinity,
 					ServiceAccountName: cr.Spec.ServiceAccount,
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: &cr.Spec.DefaultBackend.RunAsUser,
+						RunAsUser: &runAsUser,
 					},
 					Containers: []corev1.Container{
 						{
@@ -291,7 +364,11 @@ func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deploymen
 							Image: cr.Spec.DefaultBackend.Image.Repository + ":" + cr.Spec.DefaultBackend.Image.Tag,
 							Args:  args,
 							Ports: ports,
-							Env:   append(returnDefaultENV(), cr.Spec.DefaultBackend.Env...),
+							Env:   env,
+							Resources: corev1.ResourceRequirements{
+								Limits:   resourcesLimits,
+								Requests: resourcesRequests,
+							},
 						},
 					},
 				},
@@ -307,12 +384,22 @@ func generateDefaultBackendService(cr *appv1alpha1.NginxIngress) corev1.Service 
 		"app.improvado.io/component": "service",
 	}
 
+	serviceAnnotations := map[string]string{}
+	if cr.Spec.DefaultBackend.Annotations != nil {
+		serviceAnnotations = *cr.Spec.DefaultBackend.ServiceAnnotations
+	}
+
+	name := cr.Name + "-default-backend"
+	if cr.Spec.DefaultBackend.Name != "" {
+		name = cr.Spec.DefaultBackend.Name
+	}
+
 	service := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        cr.Name,
+			Name:        name,
 			Namespace:   cr.Namespace,
 			Labels:      labels,
-			Annotations: cr.Spec.DefaultBackend.ServiceAnnotations,
+			Annotations: serviceAnnotations,
 		},
 	}
 

@@ -8,12 +8,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func generateConfigmap(cr *appv1alpha1.NginxIngress, configmapName string) corev1.ConfigMap {
+func generateConfigmap(cr *appv1alpha1.NginxIngress) corev1.ConfigMap {
+
 	data := cr.Spec.NginxController.Config
 
 	return corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      configmapName,
+			Name:      cr.Name,
 			Namespace: cr.Namespace,
 		},
 		Data: data,
@@ -153,7 +154,11 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 	args := []string{"/nginx-ingress-controller"}
 
 	if cr.Spec.DefaultBackend != nil {
-		args = append(args, "--default-backend-service="+cr.Name+"-default-backend")
+		defaultBackendName := cr.Name + "-default-backend"
+		if cr.Spec.DefaultBackend.Name != "" {
+			defaultBackendName = cr.Spec.DefaultBackend.Name
+		}
+		args = append(args, "--default-backend-service="+defaultBackendName)
 	} else if cr.Spec.NginxController.DefaultBackendService != "" {
 		args = append(args, "--default-backend-service="+cr.Spec.NginxController.DefaultBackendService)
 	}
@@ -180,10 +185,6 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 		args = append(args, "--configmap="+cr.Spec.NginxController.ConfigMap)
 	} else {
 		args = append(args, "--configmap="+cr.Name)
-	}
-
-	if cr.Spec.NginxController.ConfigMapNginx != "" {
-		args = append(args, "--nginx-configmap="+cr.Spec.NginxController.ConfigMapNginx)
 	}
 
 	if cr.Spec.NginxController.ConfigMapTCP != "" {

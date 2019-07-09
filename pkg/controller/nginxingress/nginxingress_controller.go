@@ -306,39 +306,36 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		}
 	}
 
-	// if configmap name set manually in CR, typically not used ever, but hell knows...
-	configmapName := instance.Name + "-controller"
-	if instance.Spec.NginxController.ConfigMap != "" {
-		configmapName = instance.Spec.NginxController.ConfigMap
-	}
+	// if CM name not set manually then create CM based on nginxController.config
+	if instance.Spec.NginxController.ConfigMap == "" {
+		// reconcile configmap
+		newConfigmap := generateConfigmap(instance)
 
-	// reconcile configmap
-	newConfigmap := generateConfigmap(instance, configmapName)
-
-	if err := controllerutil.SetControllerReference(instance, &newConfigmap, r.scheme); err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return reconcile.Result{}, err
-	}
-
-	foundConfigmap := corev1.ConfigMap{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newConfigmap.Name, Namespace: newConfigmap.Namespace}, &foundConfigmap)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Configmap", "Namespace", newConfigmap.Namespace, "Name", newConfigmap.Name)
-		err = r.client.Create(context.TODO(), &newConfigmap)
-		if err != nil {
+		if err := controllerutil.SetControllerReference(instance, &newConfigmap, r.scheme); err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			return reconcile.Result{}, err
 		}
-	} else if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return reconcile.Result{}, err
-	} else {
-		if readyToReconcile, reconConfigmap := reconcileConfigmap(foundConfigmap, newConfigmap); readyToReconcile {
-			reqLogger.Info("Updating Configmap", "Namespace", reconConfigmap.Namespace, "Name", reconConfigmap.Name)
-			if err = r.client.Update(context.TODO(), &reconConfigmap); err != nil {
-				reqLogger.Info("Reconcile configmap error", "Namespace", foundConfigmap.Namespace, "Name", foundConfigmap.Name)
+
+		foundConfigmap := corev1.ConfigMap{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: newConfigmap.Name, Namespace: newConfigmap.Namespace}, &foundConfigmap)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Configmap", "Namespace", newConfigmap.Namespace, "Name", newConfigmap.Name)
+			err = r.client.Create(context.TODO(), &newConfigmap)
+			if err != nil {
 				raven.CaptureErrorAndWait(err, nil)
 				return reconcile.Result{}, err
+			}
+		} else if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			return reconcile.Result{}, err
+		} else {
+			if readyToReconcile, reconConfigmap := reconcileConfigmap(foundConfigmap, newConfigmap); readyToReconcile {
+				reqLogger.Info("Updating Configmap", "Namespace", reconConfigmap.Namespace, "Name", reconConfigmap.Name)
+				if err = r.client.Update(context.TODO(), &reconConfigmap); err != nil {
+					reqLogger.Info("Reconcile configmap error", "Namespace", foundConfigmap.Namespace, "Name", foundConfigmap.Name)
+					raven.CaptureErrorAndWait(err, nil)
+					return reconcile.Result{}, err
+				}
 			}
 		}
 	}

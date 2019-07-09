@@ -51,10 +51,20 @@ func (in *DefaultBackendSpec) DeepCopyInto(out *DefaultBackendSpec) {
 			}
 		}
 	}
+	if in.Port != nil {
+		in, out := &in.Port, &out.Port
+		*out = new(int32)
+		**out = **in
+	}
 	if in.Affinity != nil {
 		in, out := &in.Affinity, &out.Affinity
 		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.Replicas != nil {
+		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
 	}
 	if in.Annotations != nil {
 		in, out := &in.Annotations, &out.Annotations

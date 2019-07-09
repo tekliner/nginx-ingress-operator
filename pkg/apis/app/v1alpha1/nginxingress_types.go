@@ -12,27 +12,28 @@ type ImageSpec struct {
 }
 
 type DefaultBackendSpec struct {
-	Name               string             `json:"name,omitempty"`
-	Image              ImageSpec          `json:"image"`
-	CustomArgs         []string           `json:"customArgs,omitempty"`
-	RunAsUser          *int64             `json:"runAsUser,omitempty"` // default 0
-	Env                *[]v1.EnvVar       `json:"env,omitempty"`
-	Port               int32              `json:"port"`
-	Affinity           *v1.Affinity       `json:"affinity,omitempty"`
-	Replicas           int32              `json:"replicas"`
-	Annotations        *map[string]string `json:"annotations,omitempty"`
-	PodRequests        *v1.ResourceList   `json:"pod_requests,omitempty"`
-	PodLimits          *v1.ResourceList   `json:"pod_limits,omitempty"`
-	ServiceAnnotations *map[string]string `json:"serviceAnnotations,omitempty"`
+	Name               string             `json:"name,omitempty"`               // default cr.name+"-default-backend"
+	Namespace          string             `json:"namespace,omitempty"`          // default current namespace
+	Image              ImageSpec          `json:"image,omitempty"`              // default k8s.gcr.io/defaultbackend-amd64:1.5
+	CustomArgs         []string           `json:"customArgs,omitempty"`         // pass arguments to container
+	RunAsUser          *int64             `json:"runAsUser,omitempty"`          // default 0
+	Env                *[]v1.EnvVar       `json:"env,omitempty"`                // pass ENVs to container
+	Port               *int32             `json:"port,omitempty"`               // default 8080
+	Affinity           *v1.Affinity       `json:"affinity,omitempty"`           // default empty
+	Replicas           *int32             `json:"replicas,omitempty"`           // default 1
+	Annotations        *map[string]string `json:"annotations,omitempty"`        // default empty
+	PodRequests        *v1.ResourceList   `json:"pod_requests,omitempty"`       // default empty
+	PodLimits          *v1.ResourceList   `json:"pod_limits,omitempty"`         // default empty
+	ServiceAnnotations *map[string]string `json:"serviceAnnotations,omitempty"` // default empty
 }
 
-type MetricsServiceSpecs struct {
-	Port        int32             `json:"port"`
+type MetricsServiceSpecs struct { // define to turn on
+	Port        int32             `json:"port"` // required
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-type StatsSpec struct {
-	Port int32 `json:"port"`
+type StatsSpec struct { // define to turn on
+	Port int32 `json:"port"` // required
 }
 
 type IngressServiceSpec struct {
@@ -69,7 +70,7 @@ type NginxControllerSpec struct {
 	PublishServicePath string            `json:"publishServicePath,omitempty"` // override generated value
 
 	PriorityClassName     string       `json:"priorityClassName,omitempty"`
-	DefaultBackendService string       `json:"defaultBackendService,omitempty"`
+	DefaultBackendService string       `json:"defaultBackendService,omitempty"` // format: namespace/svcname
 	DNSPolicy             v1.DNSPolicy `json:"dnsPolicy,omitempty"`
 	IngressClass          string       `json:"ingressClass,omitempty"`
 }

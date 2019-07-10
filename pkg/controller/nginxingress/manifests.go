@@ -193,7 +193,7 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 	if cr.Spec.NginxController.ConfigMap != "" {
 		args = append(args, "--configmap="+cr.Spec.NginxController.ConfigMap)
 	} else {
-		args = append(args, "--configmap="+cr.Name)
+		args = append(args, "--configmap="+cr.Namespace+"/"+cr.Name)
 	}
 
 	if cr.Spec.NginxController.ConfigMapTCP != "" {

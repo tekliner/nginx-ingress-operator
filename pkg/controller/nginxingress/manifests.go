@@ -242,6 +242,16 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 		ports = append(ports, statsPort)
 	}
 
+	image := "quay.io/kubernetes-ingress-controller/nginx-ingress-controller"
+	if cr.Spec.NginxController.Image.Repository != "" && cr.Spec.NginxController.Image.Tag != "" {
+		image = cr.Spec.NginxController.Image.Repository + ":" + cr.Spec.NginxController.Image.Tag
+	}
+
+	pullPolicy := corev1.PullIfNotPresent
+	if cr.Spec.NginxController.Image.PullPolicy != nil {
+		pullPolicy = *cr.Spec.NginxController.Image.PullPolicy
+	}
+
 	deployment := v1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -272,11 +282,12 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 					},
 					Containers: []corev1.Container{
 						{
-							Name:  "nginx-ingress",
-							Image: cr.Spec.NginxController.Image.Repository + ":" + cr.Spec.NginxController.Image.Tag,
-							Args:  args,
-							Ports: ports,
-							Env:   env,
+							Name:            "nginx-ingress",
+							Image:           image,
+							ImagePullPolicy: pullPolicy,
+							Args:            args,
+							Ports:           ports,
+							Env:             env,
 							Resources: corev1.ResourceRequirements{
 								Limits:   resourcesLimits,
 								Requests: resourcesRequests,

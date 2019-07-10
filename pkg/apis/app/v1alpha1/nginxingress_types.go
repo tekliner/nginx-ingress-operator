@@ -6,9 +6,9 @@ import (
 )
 
 type ImageSpec struct {
-	Tag        string `json:"tag"`
-	Repository string `json:"repository"`
-	PullPolicy string `json:"pullPolicy,omitempty"`
+	Tag        string         `json:"tag"`
+	Repository string         `json:"repository"`
+	PullPolicy *v1.PullPolicy `json:"pullPolicy,omitempty"`
 }
 
 type DefaultBackendSpec struct {
@@ -16,14 +16,14 @@ type DefaultBackendSpec struct {
 	Namespace          string             `json:"namespace,omitempty"`          // default current namespace
 	Image              ImageSpec          `json:"image,omitempty"`              // default k8s.gcr.io/defaultbackend-amd64:1.5
 	CustomArgs         []string           `json:"customArgs,omitempty"`         // pass arguments to container
-	RunAsUser          *int64             `json:"runAsUser,omitempty"`          // default 0
+	RunAsUser          *int64             `json:"runAsUser,omitempty"`          // default 65534
 	Env                *[]v1.EnvVar       `json:"env,omitempty"`                // pass ENVs to container
 	Port               *int32             `json:"port,omitempty"`               // default 8080
 	Affinity           *v1.Affinity       `json:"affinity,omitempty"`           // default empty
 	Replicas           *int32             `json:"replicas,omitempty"`           // default 1
 	Annotations        *map[string]string `json:"annotations,omitempty"`        // default empty
-	PodRequests        *v1.ResourceList   `json:"pod_requests,omitempty"`       // default empty
-	PodLimits          *v1.ResourceList   `json:"pod_limits,omitempty"`         // default empty
+	PodRequests        *v1.ResourceList   `json:"podRequests,omitempty"`        // default empty
+	PodLimits          *v1.ResourceList   `json:"podLimits,omitempty"`          // default empty
 	ServiceAnnotations *map[string]string `json:"serviceAnnotations,omitempty"` // default empty
 }
 

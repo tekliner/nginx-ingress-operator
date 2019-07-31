@@ -111,35 +111,73 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	// reconcile deployment
-	newDeployment := generateDeployment(instance)
+	// defaultDackend deployment and service
+	// checking at first, if defaultBackend not defined controller will use NginxController.DefaultBackendService string
+	// https://kubernetes.github.io/ingress-nginx/user-guide/cli-arguments/
+	// Service used to serve HTTP requests not matching any known server name (catch-all).
+	if instance.Spec.NginxController.DefaultBackendService == "" {
+		newBackendDeployment := generateDefaultBackendDeployment(instance)
 
-	if err := controllerutil.SetControllerReference(instance, &newDeployment, r.scheme); err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return reconcile.Result{}, err
-	}
-
-	foundDeployment := v1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newDeployment.Name, Namespace: newDeployment.Namespace}, &foundDeployment)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Deployment", "Namespace", newDeployment.Namespace, "Name", newDeployment.Name)
-		err = r.client.Create(context.TODO(), &newDeployment)
-		if err != nil {
+		if err := controllerutil.SetControllerReference(instance, &newBackendDeployment, r.scheme); err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			return reconcile.Result{}, err
 		}
-	} else if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return reconcile.Result{}, err
-	} else {
-		if readyToReconcile, reconDeployment := reconcileDeployment(foundDeployment, newDeployment); readyToReconcile {
-			reqLogger.Info("Updating Deployment", "Namespace", reconDeployment.Namespace, "Name", reconDeployment.Name)
-			if err = r.client.Update(context.TODO(), &reconDeployment); err != nil {
-				reqLogger.Info("Reconcile deployment error", "Namespace", foundDeployment.Namespace, "Name", foundDeployment.Name)
+
+		// default backend deployment
+		foundBackendDeployment := v1.Deployment{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: newBackendDeployment.Name, Namespace: newBackendDeployment.Namespace}, &foundBackendDeployment)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Deployment", "Namespace", newBackendDeployment.Namespace, "Name", newBackendDeployment.Name)
+			err = r.client.Create(context.TODO(), &newBackendDeployment)
+			if err != nil {
 				raven.CaptureErrorAndWait(err, nil)
 				return reconcile.Result{}, err
 			}
+		} else if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			return reconcile.Result{}, err
+		} else {
+			if reconcileRequired, reconDeployment := reconcileDeployment(foundBackendDeployment, newBackendDeployment); reconcileRequired {
+				reqLogger.Info("Updating Deployment", "Namespace", reconDeployment.Namespace, "Name", reconDeployment.Name)
+				if err = r.client.Update(context.TODO(), &reconDeployment); err != nil {
+					reqLogger.Info("Reconcile deployment error", "Namespace", foundBackendDeployment.Namespace, "Name", foundBackendDeployment.Name)
+					raven.CaptureErrorAndWait(err, nil)
+					return reconcile.Result{}, err
+				}
+			}
 		}
+
+		// reconcile default backend service
+		newDefaultService := generateDefaultBackendService(instance)
+
+		if err := controllerutil.SetControllerReference(instance, &newDefaultService, r.scheme); err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			return reconcile.Result{}, err
+		}
+
+		foundDefaultService := corev1.Service{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: newDefaultService.Name, Namespace: newDefaultService.Namespace}, &foundDefaultService)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Service", "Namespace", newDefaultService.Namespace, "Name", newDefaultService.Name)
+			err = r.client.Create(context.TODO(), &newDefaultService)
+			if err != nil {
+				raven.CaptureErrorAndWait(err, nil)
+				return reconcile.Result{}, err
+			}
+		} else if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			return reconcile.Result{}, err
+		} else {
+			if reconcileRequired, reconService := reconcileService(foundDefaultService, newDefaultService); reconcileRequired {
+				reqLogger.Info("Updating Service", "Namespace", reconService.Namespace, "Name", reconService.Name)
+				if err = r.client.Update(context.TODO(), &reconService); err != nil {
+					reqLogger.Info("Reconcile service error", "Namespace", foundDefaultService.Namespace, "Name", foundDefaultService.Name)
+					raven.CaptureErrorAndWait(err, nil)
+					return reconcile.Result{}, err
+				}
+			}
+		}
+
 	}
 
 	// reconcile service
@@ -163,7 +201,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	} else {
-		if readyToReconcile, reconService := reconcileService(foundService, newService); readyToReconcile {
+		if reconcileRequired, reconService := reconcileService(foundService, newService); reconcileRequired {
 			reqLogger.Info("Updating Service", "Namespace", reconService.Namespace, "Name", reconService.Name)
 			if err = r.client.Update(context.TODO(), &reconService); err != nil {
 				reqLogger.Info("Reconcile service error", "Namespace", foundService.Namespace, "Name", foundService.Name)
@@ -195,7 +233,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			raven.CaptureErrorAndWait(err, nil)
 			return reconcile.Result{}, err
 		} else {
-			if readyToReconcile, reconService := reconcileService(foundService, newService); readyToReconcile {
+			if reconcileRequired, reconService := reconcileService(foundService, newService); reconcileRequired {
 				reqLogger.Info("Updating Metrics Service", "Namespace", reconService.Namespace, "Name", reconService.Name)
 				if err = r.client.Update(context.TODO(), &reconService); err != nil {
 					reqLogger.Info("Reconcile metrics Service error", "Namespace", foundService.Namespace, "Name", foundService.Name)
@@ -228,7 +266,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			raven.CaptureErrorAndWait(err, nil)
 			return reconcile.Result{}, err
 		} else {
-			if readyToReconcile, reconService := reconcileService(foundService, newService); readyToReconcile {
+			if reconcileRequired, reconService := reconcileService(foundService, newService); reconcileRequired {
 				reqLogger.Info("Updating Stats Service", "Namespace", reconService.Namespace, "Name", reconService.Name)
 				if err = r.client.Update(context.TODO(), &reconService); err != nil {
 					reqLogger.Info("Reconcile stats Service error", "Namespace", foundService.Namespace, "Name", foundService.Name)
@@ -239,25 +277,54 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		}
 	}
 
-	// if configmap name set manually in CR, typically not used ever, but hell knows...
-	configmapName := instance.Name + "-controller"
-	if instance.Spec.NginxController.ConfigMap != "" {
-		configmapName = instance.Spec.NginxController.ConfigMap
+	// if CM name not set manually then create CM based on nginxController.config
+	if instance.Spec.NginxController.ConfigMap == "" {
+		// reconcile configmap
+		newConfigmap := generateConfigmap(instance)
+
+		if err := controllerutil.SetControllerReference(instance, &newConfigmap, r.scheme); err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			return reconcile.Result{}, err
+		}
+
+		foundConfigmap := corev1.ConfigMap{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: newConfigmap.Name, Namespace: newConfigmap.Namespace}, &foundConfigmap)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new Configmap", "Namespace", newConfigmap.Namespace, "Name", newConfigmap.Name)
+			err = r.client.Create(context.TODO(), &newConfigmap)
+			if err != nil {
+				raven.CaptureErrorAndWait(err, nil)
+				return reconcile.Result{}, err
+			}
+		} else if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			return reconcile.Result{}, err
+		} else {
+			if reconcileRequired, reconConfigmap := reconcileConfigmap(foundConfigmap, newConfigmap); reconcileRequired {
+				reqLogger.Info("Updating Configmap", "Namespace", reconConfigmap.Namespace, "Name", reconConfigmap.Name)
+				if err = r.client.Update(context.TODO(), &reconConfigmap); err != nil {
+					reqLogger.Info("Reconcile configmap error", "Namespace", foundConfigmap.Namespace, "Name", foundConfigmap.Name)
+					raven.CaptureErrorAndWait(err, nil)
+					return reconcile.Result{}, err
+				}
+			}
+		}
 	}
 
-	// reconcile configmap
-	newConfigmap := generateConfigmap(instance, configmapName)
+	// reconcile deployment
+	newDeployment := generateDeployment(instance)
 
-	if err := controllerutil.SetControllerReference(instance, &newConfigmap, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, &newDeployment, r.scheme); err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	}
 
-	foundConfigmap := corev1.ConfigMap{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newConfigmap.Name, Namespace: newConfigmap.Namespace}, &foundConfigmap)
+	// controller deployment
+	foundDeployment := v1.Deployment{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newDeployment.Name, Namespace: newDeployment.Namespace}, &foundDeployment)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Configmap", "Namespace", newConfigmap.Namespace, "Name", newConfigmap.Name)
-		err = r.client.Create(context.TODO(), &newConfigmap)
+		reqLogger.Info("Creating a new Deployment", "Namespace", newDeployment.Namespace, "Name", newDeployment.Name)
+		err = r.client.Create(context.TODO(), &newDeployment)
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			return reconcile.Result{}, err
@@ -266,10 +333,10 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		raven.CaptureErrorAndWait(err, nil)
 		return reconcile.Result{}, err
 	} else {
-		if readyToReconcile, reconConfigmap := reconcileConfigmap(foundConfigmap, newConfigmap); readyToReconcile {
-			reqLogger.Info("Updating Configmap", "Namespace", reconConfigmap.Namespace, "Name", reconConfigmap.Name)
-			if err = r.client.Update(context.TODO(), &reconConfigmap); err != nil {
-				reqLogger.Info("Reconcile configmap error", "Namespace", foundConfigmap.Namespace, "Name", foundConfigmap.Name)
+		if reconcileRequired, reconDeployment := reconcileDeployment(foundDeployment, newDeployment); reconcileRequired {
+			reqLogger.Info("Updating Deployment", "Namespace", reconDeployment.Namespace, "Name", reconDeployment.Name)
+			if err = r.client.Update(context.TODO(), &reconDeployment); err != nil {
+				reqLogger.Info("Reconcile deployment error", "Namespace", foundDeployment.Namespace, "Name", foundDeployment.Name)
 				raven.CaptureErrorAndWait(err, nil)
 				return reconcile.Result{}, err
 			}

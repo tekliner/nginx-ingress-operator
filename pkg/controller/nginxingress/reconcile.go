@@ -22,7 +22,7 @@ func reconcileDeployment(foundDeployment v1.Deployment, newDeployment v1.Deploym
 	}
 
 	if !reflect.DeepEqual(foundDeployment.Spec.Template, newDeployment.Spec.Template) {
-		foundDeployment.Labels = newDeployment.Labels
+		foundDeployment.Spec.Template = newDeployment.Spec.Template
 		reconcileRequired = true
 	}
 

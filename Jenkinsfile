@@ -31,9 +31,6 @@ images:
     newTag: ${branch}-${build}
 
 resources:
-- role.yaml
-- role_binding.yaml
-- service_account.yaml
 - deployment.yaml
 """
             sh "kubectl kustomize k8s/kustomize/ > deploy.yaml"

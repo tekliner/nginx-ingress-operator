@@ -2,7 +2,7 @@ package nginxingress
 
 import (
 	appv1alpha1 "github.com/tekliner/nginx-ingress-operator/pkg/apis/app/v1alpha1"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -242,7 +242,7 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 		ports = append(ports, statsPort)
 	}
 
-	image := "quay.io/kubernetes-ingress-controller/nginx-ingress-controller"
+	image := "quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.25.0"
 	if cr.Spec.NginxController.Image.Repository != "" && cr.Spec.NginxController.Image.Tag != "" {
 		image = cr.Spec.NginxController.Image.Repository + ":" + cr.Spec.NginxController.Image.Tag
 	}

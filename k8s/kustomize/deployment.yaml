@@ -14,6 +14,8 @@ spec:
     spec:
       containers:
         - name: nginx-ingress-operator
+          command:
+            - nginx-ingress-operator
           image: operator
           imagePullPolicy: Always
           env:

@@ -22,9 +22,6 @@ node {
         }
 	stage ('Deploy to production') {
             writeFile file: 'k8s/kustomize/kustomization.yaml', text: """
-commonLabels:
-  version: ${branch}-${build}
-
 images: 
   - name: operator
     newName: 716309063777.dkr.ecr.us-east-1.amazonaws.com/nginx-ingress-operator

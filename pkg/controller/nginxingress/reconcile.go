@@ -3,7 +3,7 @@ package nginxingress
 import (
 	"reflect"
 
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -17,6 +17,11 @@ func reconcileDeployment(foundDeployment v1.Deployment, newDeployment v1.Deploym
 	}
 
 	if !reflect.DeepEqual(foundDeployment.Labels, newDeployment.Labels) {
+		foundDeployment.Labels = newDeployment.Labels
+		reconcileRequired = true
+	}
+
+	if !reflect.DeepEqual(foundDeployment.Spec.Template, newDeployment.Spec.Template) {
 		foundDeployment.Labels = newDeployment.Labels
 		reconcileRequired = true
 	}

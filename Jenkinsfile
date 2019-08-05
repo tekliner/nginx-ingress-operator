@@ -21,9 +21,7 @@ node {
 	    input message: 'Is this build ready for production?', submitter: 'tekliner'
         }
 	stage ('Deploy to production') {
-            writeFile file: 'patch.yaml', text: """
-            - name: WATCH_NAMESPACE
-              value: ""
+            writeFile file: 'k8s/kustomize/kustomization.yaml', text: """
 commonLabels:
   version: ${branch}-${build}
 

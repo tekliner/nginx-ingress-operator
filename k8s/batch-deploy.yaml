@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    version: debug
+  name: nginx-ingress-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    version: debug
+  name: nginx-ingress-operator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  - endpoints
+  - persistentvolumeclaims
+  - events
+  - configmaps
+  - secrets
+  - nodes
+  verbs:
+  - '*'
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  - ingresses/status
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - '*'
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - app.improvado.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    version: debug
+  name: nginx-ingress-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nginx-ingress-operator
+subjects:
+- kind: ServiceAccount
+  name: nginx-ingress-operator
+  namespace: nginx-ingress-operator-debug
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    version: debug
+  name: nginx-ingress-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: nginx-ingress-operator
+      version: debug
+  template:
+    metadata:
+      labels:
+        name: nginx-ingress-operator
+        version: debug
+    spec:
+      containers:
+        env:
+        - name: WATCH_NAMESPACE
+          value: nginx-ingress-operator-debug
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: OPERATOR_NAME
+          value: nginx-ingress-operator
+        - name: SENTRY_DSN
+          value: https://d459b0af58254d9194c16db3ff56c11e:b69a9ea1c0534e9f99e710f17d79f1e9@sentry.tools.improvado.io/42
+        image: 716309063777.dkr.ecr.us-east-1.amazonaws.com/nginx-ingress-operator:debug
+        imagePullPolicy: Always
+        name: nginx-ingress-operator
+      restartPolicy: Always
+      serviceAccount: nginx-ingress-operator
+      serviceAccountName: nginx-ingress-operator

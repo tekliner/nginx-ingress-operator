@@ -1,0 +1,13 @@
+commonLabels:
+  version: debug
+
+images: 
+  - name: operator
+    newName: 716309063777.dkr.ecr.us-east-1.amazonaws.com/nginx-ingress-operator
+    newTag: debug
+
+resources:
+- role.yaml
+- role_binding.yaml
+- service_account.yaml
+- deployment.yaml

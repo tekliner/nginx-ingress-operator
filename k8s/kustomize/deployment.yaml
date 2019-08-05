@@ -18,7 +18,7 @@ spec:
           imagePullPolicy: Always
           env:
           - name: WATCH_NAMESPACE
-            value: nginx-ingress-operator-debug
+            value: ""
           - name: POD_NAME
             valueFrom:
               fieldRef:

@@ -5,7 +5,7 @@ metadata:
 subjects:
 - kind: ServiceAccount
   name: nginx-ingress-operator
-  namespace: nginx-ingress-operator-debug
+  namespace: default
 roleRef:
   kind: ClusterRole
   name: nginx-ingress-operator

@@ -54,6 +54,11 @@ func reconcileService(foundService corev1.Service, newService corev1.Service) (b
 		reconcileRequired = true
 	}
 
+	if !reflect.DeepEqual(foundService.Annotations, newService.Annotations) {
+		foundService.Annotations = newService.Annotations
+		reconcileRequired = true
+	}
+
 	return reconcileRequired, foundService
 }
 

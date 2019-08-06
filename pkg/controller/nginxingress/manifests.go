@@ -97,6 +97,10 @@ func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 
 	service.Spec.Type = corev1.ServiceTypeLoadBalancer
 
+	if cr.Spec.NginxServiceSpec.Type != "" {
+		service.Spec.Type = cr.Spec.NginxServiceSpec.Type
+	}
+
 	service.Spec.Ports = []corev1.ServicePort{
 		{
 			Name:       "http",

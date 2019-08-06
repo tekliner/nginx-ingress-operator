@@ -454,7 +454,7 @@ func generateDefaultBackendService(cr *appv1alpha1.NginxIngress) corev1.Service 
 		},
 	}
 
-	service.Spec.Type = corev1.ServiceTypeLoadBalancer
+	service.Spec.Type = corev1.ServiceTypeClusterIP
 
 	port := int32(8080)
 	if cr.Spec.DefaultBackend != nil && cr.Spec.DefaultBackend.Port != nil {

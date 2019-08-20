@@ -34,11 +34,6 @@ func reconcileService(foundService corev1.Service, newService corev1.Service) (b
 
 	reconcileRequired := false
 
-	if !reflect.DeepEqual(foundService.Spec.Ports, newService.Spec.Ports) {
-		foundService.Spec.Ports = newService.Spec.Ports
-		reconcileRequired = true
-	}
-
 	if !reflect.DeepEqual(foundService.Spec.Type, newService.Spec.Type) {
 		foundService.Spec.Type = newService.Spec.Type
 		reconcileRequired = true

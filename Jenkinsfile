@@ -31,17 +31,19 @@ resources:
     }
 
     if (branch == 'master') {
-        stage ('Wait for confirmation of build promotion') {
+        stage('Wait for confirmation of build promotion') {
             input message: 'Is this build ready for production?', submitter: 'tekliner'
         }
-	stage ('Deploy to production') {
+        stage('Deploy to production') {
             sh "kubectl apply -f deploy.yaml -n default"
         }
     } else {
+        stage('Deploy to sandbox') {
             sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl create ns nginx-ingress-operator-${branch} || true"
             sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl apply -f deploy/service_account.yaml -n nginx-ingress-operator-${branch} || true"
             sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl apply -f deploy/role_binding.yaml -n nginx-ingress-operator-${branch} || true"
             sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl apply -f deploy/role.yaml -n nginx-ingress-operator-${branch} || true"
             sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl apply -f deploy.yaml -n nginx-ingress-operator-${branch} || true"
+        }
     }
 }

@@ -16,12 +16,8 @@ node {
         }
     }
 
-    if (branch == 'master') {
-        stage ('Wait for confirmation of build promotion') {
-	    input message: 'Is this build ready for production?', submitter: 'tekliner'
-        }
-	stage ('Deploy to production') {
-            writeFile file: 'k8s/kustomize/kustomization.yaml', text: """
+    stage('Generate manifests') {
+        writeFile file: 'k8s/kustomize/kustomization.yaml', text: """
 images: 
   - name: operator
     newName: 716309063777.dkr.ecr.us-east-1.amazonaws.com/nginx-ingress-operator
@@ -30,9 +26,24 @@ images:
 resources:
 - deployment.yaml
 """
-            sh "kubectl kustomize k8s/kustomize/ > deploy.yaml"
-            archiveArtifacts: 'deploy.yaml'
+        sh "kubectl kustomize k8s/kustomize/ > deploy.yaml"
+        archiveArtifacts: 'deploy.yaml'
+    }
+
+    if (branch == 'master') {
+        stage('Wait for confirmation of build promotion') {
+            input message: 'Is this build ready for production?', submitter: 'tekliner'
+        }
+        stage('Deploy to production') {
             sh "kubectl apply -f deploy.yaml -n default"
+        }
+    } else {
+        stage('Deploy to sandbox') {
+            sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl create ns nginx-ingress-operator-${branch} || true"
+            sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl apply -f deploy/service_account.yaml -n nginx-ingress-operator-${branch} || true"
+            sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl apply -f deploy/role_binding.yaml -n nginx-ingress-operator-${branch} || true"
+            sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl apply -f deploy/role.yaml -n nginx-ingress-operator-${branch} || true"
+            sh "HOME=/root;KUBECONFIG=/root/.kube/sandbox.config kubectl apply -f deploy.yaml -n nginx-ingress-operator-${branch} || true"
         }
     }
 }

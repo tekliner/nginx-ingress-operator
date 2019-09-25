@@ -46,7 +46,7 @@ func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 		},
 	}
 
-	service.Spec.Selector = baseLabels(cr)
+	service.Spec.Selector = mergeMaps(baseLabels(cr), map[string]string{"app.improvado.io/component": "application"})
 
 	return service
 }
@@ -76,7 +76,7 @@ func generateServiceStats(cr *appv1alpha1.NginxIngress) corev1.Service {
 		},
 	}
 
-	service.Spec.Selector = baseLabels(cr)
+	service.Spec.Selector = mergeMaps(baseLabels(cr), map[string]string{"app.improvado.io/component": "application"})
 
 	return service
 }
@@ -116,7 +116,7 @@ func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 		},
 	}
 
-	service.Spec.Selector = baseLabels(cr)
+	service.Spec.Selector = mergeMaps(baseLabels(cr), map[string]string{"app.improvado.io/component": "application"})
 
 	return service
 }

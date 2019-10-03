@@ -2,6 +2,7 @@
 # Temporary Build Files
 build/_output
 build/_test
+/build/go_main_go
 # Created by https://www.gitignore.io/api/go,vim,emacs,visualstudiocode
 ### Emacs ###
 # -*- mode: gitignore; -*-

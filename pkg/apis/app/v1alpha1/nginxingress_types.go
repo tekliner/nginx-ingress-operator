@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	"k8s.io/api/core/v1"
+	v1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -82,12 +83,14 @@ type NginxIngressSpec struct {
 
 	Replicas int32 `json:"replicas"`
 
-	Metrics                 *MetricsServiceSpecs `json:"metrics,omitempty"`
-	Stats                   *StatsSpec           `json:"stats,omitempty"`
-	NginxController         NginxControllerSpec  `json:"nginxController"`
-	DefaultBackend          *DefaultBackendSpec  `json:"defaultBackend,omitempty"`
-	NginxServiceSpec        v1.ServiceSpec       `json:"service"`
-	NginxServiceAnnotations map[string]string    `json:"serviceAnnotations,omitempty"`
+	Metrics                 *MetricsServiceSpecs        `json:"metrics,omitempty"`
+	Stats                   *StatsSpec                  `json:"stats,omitempty"`
+	NginxController         NginxControllerSpec         `json:"nginxController"`
+	DefaultBackend          *DefaultBackendSpec         `json:"defaultBackend,omitempty"`
+	NginxServiceSpec        v1.ServiceSpec              `json:"service"`
+	NginxServiceAnnotations map[string]string           `json:"serviceAnnotations,omitempty"`
+	BackendPdb              v1beta1.PodDisruptionBudget `json:"backendPdb"`
+	ControllerPdb           v1beta1.PodDisruptionBudget `json:"controllerPdb"`
 
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 }

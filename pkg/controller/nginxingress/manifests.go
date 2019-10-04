@@ -488,8 +488,7 @@ func generateControllerPodDisruptionBudget(cr *appv1alpha1.NginxIngress) v1beta1
 	}
 
 	selector := metav1.LabelSelector{
-		MatchLabels:      baseLabels(cr),
-		MatchExpressions: nil,
+		MatchLabels: baseLabels(cr),
 	}
 
 	podDisruptionBudget := v1beta1.PodDisruptionBudget{
@@ -526,7 +525,7 @@ func generateBackendPodDisruptionBudget(cr *appv1alpha1.NginxIngress) v1beta1.Po
 
 	podDisruptionBudget := v1beta1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-default-backend",
+			Name:      cr.Name + "-backend",
 			Namespace: cr.Namespace,
 		},
 		Spec: v1beta1.PodDisruptionBudgetSpec{

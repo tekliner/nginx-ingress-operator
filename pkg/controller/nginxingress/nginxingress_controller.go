@@ -319,6 +319,16 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
+	// reconcile controller podDisruptionBudget
+	newControllerBdp := generateControllerPodDisruptionBudget(instance)
+
+	if instance.Spec.ControllerPdb.Spec.MinAvailable != nil && instance.Spec.ControllerPdb.Spec.Selector != nil {
+		if err := controllerutil.SetControllerReference(instance, &newControllerBdp, r.scheme); err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			return reconcile.Result{}, err
+		}
+	}
+
 	// controller deployment
 	foundDeployment := v1.Deployment{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newDeployment.Name, Namespace: newDeployment.Namespace}, &foundDeployment)

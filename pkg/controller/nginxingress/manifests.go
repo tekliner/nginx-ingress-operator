@@ -308,7 +308,6 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 }
 
 func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
-
 	// naming of defaultBackend
 	defaultBackendName := cr.Name + "-default-backend"
 	defaultBackendNamespace := cr.Namespace
@@ -476,7 +475,7 @@ func generateDefaultBackendService(cr *appv1alpha1.NginxIngress) corev1.Service 
 	return service
 }
 
-func generateControllerPodDisruptionBudget(cr *appv1alpha1.NginxIngress) v1beta1.PodDisruptionBudget {
+func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v1beta1.PodDisruptionBudget {
 	minAvailable := intstr.FromInt(1)
 	if cr.Spec.ControllerPdb.Spec.MinAvailable != nil {
 		minAvailable = *cr.Spec.ControllerPdb.Spec.MinAvailable
@@ -493,39 +492,7 @@ func generateControllerPodDisruptionBudget(cr *appv1alpha1.NginxIngress) v1beta1
 
 	podDisruptionBudget := v1beta1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-controller",
-			Namespace: cr.Namespace,
-		},
-		Spec: v1beta1.PodDisruptionBudgetSpec{
-			MinAvailable:   &minAvailable,
-			Selector:       &selector,
-			MaxUnavailable: &maxUnavailable,
-		},
-	}
-
-	return podDisruptionBudget
-}
-
-func generateBackendPodDisruptionBudget(cr *appv1alpha1.NginxIngress) v1beta1.PodDisruptionBudget {
-
-	minAvailable := intstr.FromInt(1)
-	if cr.Spec.ControllerPdb.Spec.MinAvailable != nil {
-		minAvailable = *cr.Spec.ControllerPdb.Spec.MinAvailable
-	}
-
-	maxUnavailable := intstr.IntOrString{}
-	if cr.Spec.ControllerPdb.Spec.MaxUnavailable != nil {
-		maxUnavailable = *cr.Spec.ControllerPdb.Spec.MaxUnavailable
-	}
-
-	selector := metav1.LabelSelector{
-		MatchLabels:      baseLabels(cr),
-		MatchExpressions: nil,
-	}
-
-	podDisruptionBudget := v1beta1.PodDisruptionBudget{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-backend",
+			Name:      cr.Name + postFix,
 			Namespace: cr.Namespace,
 		},
 		Spec: v1beta1.PodDisruptionBudgetSpec{

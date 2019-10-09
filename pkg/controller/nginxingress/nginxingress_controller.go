@@ -348,7 +348,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 
 	// reconcile backend podDisruptionBudget
 
-	newBackendPDB := generatePodDisruptionBudget(instance, "-default-backend")
+	newBackendPDB := generatePodDisruptionBudget(instance, "-test")
 
 	if err := controllerutil.SetControllerReference(instance, &newBackendPDB, r.scheme); err != nil {
 		raven.CaptureErrorAndWait(err, nil)

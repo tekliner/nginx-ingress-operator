@@ -500,6 +500,22 @@ func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v
 		} else if cr.Spec.ControllerPdb.Spec.MinAvailable != nil {
 			minAvailable = *cr.Spec.ControllerPdb.Spec.MinAvailable
 		}
+	} else {
+		maxUnavailable := intstr.FromInt(1)
+		selector := metav1.LabelSelector{
+			MatchLabels: baseLabels(cr),
+		}
+		specPDB := v1beta1.PodDisruptionBudgetSpec{
+			Selector:       &selector,
+			MaxUnavailable: &maxUnavailable,
+		}
+		podDisruptionBudget = v1beta1.PodDisruptionBudget{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cr.Name + postFix,
+				Namespace: cr.Namespace,
+			},
+			Spec: specPDB,
+		}
 	}
 	return podDisruptionBudget
 }

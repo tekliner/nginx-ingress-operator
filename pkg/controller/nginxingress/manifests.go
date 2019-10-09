@@ -481,10 +481,10 @@ func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v
 		minAvailable = *cr.Spec.ControllerPdb.Spec.MinAvailable
 	}
 
-	maxUnavailable := intstr.IntOrString{}
-	if cr.Spec.ControllerPdb.Spec.MaxUnavailable != nil {
-		maxUnavailable = *cr.Spec.ControllerPdb.Spec.MaxUnavailable
-	}
+	//maxUnavailable := intstr.IntOrString{}
+	//if cr.Spec.ControllerPdb.Spec.MaxUnavailable != nil {
+	//	maxUnavailable = *cr.Spec.ControllerPdb.Spec.MaxUnavailable
+	//}
 
 	selector := metav1.LabelSelector{
 		MatchLabels: baseLabels(cr),
@@ -496,9 +496,9 @@ func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v
 			Namespace: cr.Namespace,
 		},
 		Spec: v1beta1.PodDisruptionBudgetSpec{
-			MinAvailable:   &minAvailable,
-			Selector:       &selector,
-			MaxUnavailable: &maxUnavailable,
+			MinAvailable: &minAvailable,
+			Selector:     &selector,
+			//MaxUnavailable: &maxUnavailable,
 		},
 	}
 

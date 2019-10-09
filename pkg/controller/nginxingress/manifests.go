@@ -499,8 +499,6 @@ func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v
 			minAvailable = intstr.FromInt(1)
 		} else if cr.Spec.ControllerPdb.Spec.MinAvailable != nil {
 			minAvailable = *cr.Spec.ControllerPdb.Spec.MinAvailable
-		} else if cr.Spec.ControllerPdb.Spec.MaxUnavailable != nil {
-			specPDB.MaxUnavailable = &*cr.Spec.ControllerPdb.Spec.MaxUnavailable
 		}
 	}
 	return podDisruptionBudget

@@ -477,7 +477,7 @@ func generateDefaultBackendService(cr *appv1alpha1.NginxIngress) corev1.Service 
 
 func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v1beta1.PodDisruptionBudget {
 	podDisruptionBudget := v1beta1.PodDisruptionBudget{}
-	if cr.Spec.Replicas >= 2 {
+	if *cr.Spec.DefaultBackend.Replicas >= 2 {
 
 		minAvailable := intstr.FromInt(1)
 		selector := metav1.LabelSelector{

@@ -497,6 +497,7 @@ func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v
 		},
 		Spec: v1beta1.PodDisruptionBudgetSpec{
 			MinAvailable:   &minAvailable,
+			Selector:       &selector,
 			MaxUnavailable: &maxUnavailable,
 		},
 	}

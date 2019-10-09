@@ -347,39 +347,38 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	// reconcile backend podDisruptionBudget
-	if instance.Spec.NginxController.DefaultBackendService == "" {
 
-		newBackendPDB := generatePodDisruptionBudget(instance, "-default-backend")
+	newBackendPDB := generatePodDisruptionBudget(instance, "-default-backend")
 
-		if err := controllerutil.SetControllerReference(instance, &newBackendPDB, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, &newBackendPDB, r.scheme); err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		return reconcile.Result{}, err
+	}
+
+	foundBackendPDB := v1beta1policy.PodDisruptionBudget{}
+
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newBackendPDB.Name, Namespace: newBackendPDB.Namespace}, &foundBackendPDB)
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a new PodDisruptionBudget", "Namespace", newBackendPDB.Namespace, "Name", newBackendPDB.Name)
+		err = r.client.Create(context.TODO(), &newBackendPDB)
+		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			return reconcile.Result{}, err
 		}
-
-		foundBackendPDB := v1beta1policy.PodDisruptionBudget{}
-
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: newBackendPDB.Name, Namespace: newBackendPDB.Namespace}, &foundBackendPDB)
-		if err != nil && errors.IsNotFound(err) {
-			reqLogger.Info("Creating a new PodDisruptionBudget", "Namespace", newBackendPDB.Namespace, "Name", newBackendPDB.Name)
-			err = r.client.Create(context.TODO(), &newBackendPDB)
-			if err != nil {
+	} else if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		return reconcile.Result{}, err
+	} else {
+		if reconcileRequired, reconPDB := reconcilePdb(foundBackendPDB, newBackendPDB); reconcileRequired {
+			reqLogger.Info("Updating PodDisruptionBudget", "Namespace", reconPDB.Namespace, "Name", reconPDB.Name)
+			if err = r.client.Update(context.TODO(), &reconPDB); err != nil {
+				reqLogger.Info("Reconcile PodDisruptionBudget error", "Namespace", foundBackendPDB.Namespace, "Name", foundBackendPDB.Name)
 				raven.CaptureErrorAndWait(err, nil)
 				return reconcile.Result{}, err
 			}
-		} else if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			return reconcile.Result{}, err
-		} else {
-			if reconcileRequired, reconPDB := reconcilePdb(foundBackendPDB, newBackendPDB); reconcileRequired {
-				reqLogger.Info("Updating PodDisruptionBudget", "Namespace", reconPDB.Namespace, "Name", reconPDB.Name)
-				if err = r.client.Update(context.TODO(), &reconPDB); err != nil {
-					reqLogger.Info("Reconcile PodDisruptionBudget error", "Namespace", foundBackendPDB.Namespace, "Name", foundBackendPDB.Name)
-					raven.CaptureErrorAndWait(err, nil)
-					return reconcile.Result{}, err
-				}
-			}
 		}
 	}
+
 	// reconcile controller podDisruptionBudget
 
 	newControllerBdp := generatePodDisruptionBudget(instance, "-controller")

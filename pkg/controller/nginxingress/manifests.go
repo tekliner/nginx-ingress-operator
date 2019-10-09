@@ -476,30 +476,32 @@ func generateDefaultBackendService(cr *appv1alpha1.NginxIngress) corev1.Service 
 }
 
 func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v1beta1.PodDisruptionBudget {
+	podDisruptionBudget := v1beta1.PodDisruptionBudget{}
+	if cr.Spec.Replicas >= 2 {
 
-	minAvailable := intstr.FromInt(1)
-	selector := metav1.LabelSelector{
-		MatchLabels: baseLabels(cr),
-	}
-	specPDB := v1beta1.PodDisruptionBudgetSpec{
-		MinAvailable: &minAvailable,
-		Selector:     &selector,
-	}
-	podDisruptionBudget := v1beta1.PodDisruptionBudget{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + postFix,
-			Namespace: cr.Namespace,
-		},
-		Spec: specPDB,
-	}
+		minAvailable := intstr.FromInt(1)
+		selector := metav1.LabelSelector{
+			MatchLabels: baseLabels(cr),
+		}
+		specPDB := v1beta1.PodDisruptionBudgetSpec{
+			MinAvailable: &minAvailable,
+			Selector:     &selector,
+		}
+		podDisruptionBudget = v1beta1.PodDisruptionBudget{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      cr.Name + postFix,
+				Namespace: cr.Namespace,
+			},
+			Spec: specPDB,
+		}
 
-	if cr.Spec.ControllerPdb.Spec.MinAvailable == nil && cr.Spec.ControllerPdb.Spec.MaxUnavailable == nil {
-		minAvailable = intstr.FromInt(1)
-	} else if cr.Spec.ControllerPdb.Spec.MinAvailable != nil {
-		minAvailable = *cr.Spec.ControllerPdb.Spec.MinAvailable
-	} else if cr.Spec.ControllerPdb.Spec.MaxUnavailable != nil {
-		specPDB.MaxUnavailable = &*cr.Spec.ControllerPdb.Spec.MaxUnavailable
+		if cr.Spec.ControllerPdb.Spec.MinAvailable == nil && cr.Spec.ControllerPdb.Spec.MaxUnavailable == nil {
+			minAvailable = intstr.FromInt(1)
+		} else if cr.Spec.ControllerPdb.Spec.MinAvailable != nil {
+			minAvailable = *cr.Spec.ControllerPdb.Spec.MinAvailable
+		} else if cr.Spec.ControllerPdb.Spec.MaxUnavailable != nil {
+			specPDB.MaxUnavailable = &*cr.Spec.ControllerPdb.Spec.MaxUnavailable
+		}
 	}
-
 	return podDisruptionBudget
 }

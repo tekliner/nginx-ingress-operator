@@ -356,7 +356,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	foundBackendPDB := v1beta1policy.PodDisruptionBudget{}
-
+	reqLogger.Info(foundBackendPDB.Name)
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newBackendPDB.Name, Namespace: newBackendPDB.Namespace}, &foundBackendPDB)
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new PodDisruptionBudget", "Namespace", newBackendPDB.Namespace, "Name", newBackendPDB.Name)

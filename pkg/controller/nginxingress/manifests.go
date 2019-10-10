@@ -1,7 +1,6 @@
 package nginxingress
 
 import (
-	"fmt"
 	appv1alpha1 "github.com/tekliner/nginx-ingress-operator/pkg/apis/app/v1alpha1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -502,7 +501,6 @@ func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v
 		}
 
 	} else {
-		print("maxU test...")
 		maxUnavailable := intstr.FromString("50%")
 		selector := metav1.LabelSelector{
 			MatchLabels: baseLabels(cr),
@@ -518,7 +516,6 @@ func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v
 			},
 			Spec: specPDB,
 		}
-		fmt.Printf("%+v\n", specPDB)
 	}
 	return podDisruptionBudget
 }

@@ -501,7 +501,8 @@ func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v
 		}
 
 	} else {
-		maxUnavailable := intstr.FromInt(1)
+		print("maxU test...")
+		maxUnavailable := intstr.FromString("50%")
 		selector := metav1.LabelSelector{
 			MatchLabels: baseLabels(cr),
 		}
@@ -516,6 +517,7 @@ func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v
 			},
 			Spec: specPDB,
 		}
+		print(podDisruptionBudget)
 	}
 	return podDisruptionBudget
 }

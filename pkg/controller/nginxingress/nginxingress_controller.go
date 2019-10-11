@@ -112,7 +112,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.DefaultBackend.Replicas == nil {
+	if &instance.Spec.DefaultBackend.Replicas == nil {
 		instance.Spec.DefaultBackend.Replicas = func() *int32 { r := int32(1); return &r }()
 	}
 	// defaultBackend deployment and service

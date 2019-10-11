@@ -112,9 +112,6 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	if &instance.Spec.DefaultBackend.Replicas == nil {
-		instance.Spec.DefaultBackend.Replicas = func() *int32 { r := int32(1); return &r }()
-	}
 	// defaultBackend deployment and service
 	// checking at first, if defaultBackend not defined controller will use NginxController.DefaultBackendService string
 	// https://kubernetes.github.io/ingress-nginx/user-guide/cli-arguments/
@@ -350,10 +347,15 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	// reconcile podDisruptionBudget
-	if instance.Spec.NginxController.DefaultBackendService == "" {
+	if instance.Spec.DefaultBackend != nil {
+		replicas := int32(1)
+
+		if instance.Spec.DefaultBackend.Replicas != nil {
+			replicas = *instance.Spec.DefaultBackend.Replicas
+		}
 		newBackendPDB := instance.Spec.DefaultBackend.GetDisruptionBudget(instance.Name,
 			instance.Namespace,
-			*instance.Spec.DefaultBackend.Replicas,
+			replicas,
 			instance.GetBackendLabels())
 
 		if err := controllerutil.SetControllerReference(instance, &newBackendPDB, r.scheme); err != nil {

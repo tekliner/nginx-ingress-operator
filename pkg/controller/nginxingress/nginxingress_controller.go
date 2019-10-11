@@ -346,7 +346,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 		}
 	}
 
-	// reconcile backend podDisruptionBudget
+	// reconcile podDisruptionBudget
 
 	newBackendPDB := generatePodDisruptionBudget(instance, "-default-backend")
 
@@ -373,39 +373,6 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			reqLogger.Info("Updating PodDisruptionBudget", "Namespace", reconPDB.Namespace, "Name", reconPDB.Name)
 			if err = r.client.Update(context.TODO(), &reconPDB); err != nil {
 				reqLogger.Info("Reconcile PodDisruptionBudget error", "Namespace", foundBackendPDB.Namespace, "Name", foundBackendPDB.Name)
-				raven.CaptureErrorAndWait(err, nil)
-				return reconcile.Result{}, err
-			}
-		}
-	}
-
-	// reconcile controller podDisruptionBudget
-
-	newControllerBdp := generatePodDisruptionBudget(instance, "-controller")
-
-	if err := controllerutil.SetControllerReference(instance, &newControllerBdp, r.scheme); err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return reconcile.Result{}, err
-	}
-
-	foundControllerPDB := v1beta1policy.PodDisruptionBudget{}
-
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: newControllerBdp.Name, Namespace: newControllerBdp.Namespace}, &foundControllerPDB)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new ControllerPDB", "Namespace", newControllerBdp.Namespace, "Name", newControllerBdp.Name)
-		err = r.client.Create(context.TODO(), &newControllerBdp)
-		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
-			return reconcile.Result{}, err
-		}
-	} else if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
-		return reconcile.Result{}, err
-	} else {
-		if reconcileRequired, reconPDB := reconcilePdb(foundControllerPDB, newControllerBdp); reconcileRequired {
-			reqLogger.Info("Updating ControllerPDB", "Namespace", reconPDB.Namespace, "Name", reconPDB.Name)
-			if err = r.client.Update(context.TODO(), &reconPDB); err != nil {
-				reqLogger.Info("Reconcile ControllerPDB error", "Namespace", foundControllerPDB.Namespace, "Name", foundControllerPDB.Name)
 				raven.CaptureErrorAndWait(err, nil)
 				return reconcile.Result{}, err
 			}

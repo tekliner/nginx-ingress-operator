@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	raven "github.com/getsentry/raven-go"
+	"github.com/getsentry/raven-go"
 	appv1alpha1 "github.com/tekliner/nginx-ingress-operator/pkg/apis/app/v1alpha1"
 	"k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -348,7 +348,10 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 
 	// reconcile podDisruptionBudget
 	if instance.Spec.NginxController.DefaultBackendService == "" {
-		newBackendPDB := instance.Spec.DefaultBackend.GetDisruptionBudget(instance.Name, instance.Namespace, *instance.Spec.DefaultBackend.Replicas, instance.GetBackendLabels())
+		newBackendPDB := instance.Spec.DefaultBackend.GetDisruptionBudget(instance.Name,
+			instance.Namespace,
+			*instance.Spec.DefaultBackend.Replicas,
+			instance.GetBackendLabels())
 
 		if err := controllerutil.SetControllerReference(instance, &newBackendPDB, r.scheme); err != nil {
 			raven.CaptureErrorAndWait(err, nil)

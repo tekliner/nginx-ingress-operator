@@ -4,7 +4,6 @@ import (
 	appv1alpha1 "github.com/tekliner/nginx-ingress-operator/pkg/apis/app/v1alpha1"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -25,6 +24,7 @@ func generateConfigmap(cr *appv1alpha1.NginxIngress) corev1.ConfigMap {
 func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 	labels := map[string]string{
 		"app.improvado.io/component": "service",
+		"app.improvado.io/instance":  cr.Name,
 	}
 
 	service := corev1.Service{
@@ -47,7 +47,7 @@ func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 		},
 	}
 
-	service.Spec.Selector = mergeMaps(baseLabels(cr), map[string]string{"app.improvado.io/component": "application"})
+	service.Spec.Selector = cr.GetControllerLabels()
 
 	return service
 }
@@ -77,7 +77,7 @@ func generateServiceStats(cr *appv1alpha1.NginxIngress) corev1.Service {
 		},
 	}
 
-	service.Spec.Selector = mergeMaps(baseLabels(cr), map[string]string{"app.improvado.io/component": "application"})
+	service.Spec.Selector = cr.GetControllerLabels()
 
 	return service
 }
@@ -117,7 +117,7 @@ func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 		},
 	}
 
-	service.Spec.Selector = mergeMaps(baseLabels(cr), map[string]string{"app.improvado.io/component": "application"})
+	service.Spec.Selector = cr.GetControllerLabels()
 
 	return service
 }
@@ -261,19 +261,17 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
 			Namespace: cr.ObjectMeta.Namespace,
-			Labels:    baseLabels(cr),
+			Labels:    cr.GetControllerLabels(),
 		},
 		Spec: v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: baseLabels(cr),
+				MatchLabels: cr.GetControllerLabels(),
 			},
 			Replicas: &cr.Spec.Replicas,
 			Strategy: v1.DeploymentStrategy{Type: v1.RollingUpdateDeploymentStrategyType, RollingUpdate: nil},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: mergeMaps(baseLabels(cr),
-						map[string]string{"app.improvado.io/component": "application"},
-					),
+					Labels:      cr.GetControllerLabels(),
 					Annotations: annotations,
 				},
 
@@ -385,11 +383,11 @@ func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deploymen
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaultBackendName,
 			Namespace: defaultBackendNamespace,
-			Labels:    baseLabels(cr),
+			Labels:    cr.GetBackendLabels(),
 		},
 		Spec: v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: baseLabels(cr),
+				MatchLabels: cr.GetBackendLabels(),
 			},
 			Replicas: &replicas,
 			Strategy: v1.DeploymentStrategy{
@@ -398,9 +396,7 @@ func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deploymen
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: mergeMaps(baseLabels(cr),
-						map[string]string{"app.improvado.io/component": "defaultbackend"},
-					),
+					Labels:      cr.GetBackendLabels(),
 					Annotations: setAnnotations(cr, annotations),
 				},
 				Spec: corev1.PodSpec{
@@ -470,52 +466,7 @@ func generateDefaultBackendService(cr *appv1alpha1.NginxIngress) corev1.Service 
 		},
 	}
 
-	service.Spec.Selector = baseLabels(cr)
+	service.Spec.Selector = cr.GetBackendLabels()
 
 	return service
-}
-
-func generatePodDisruptionBudget(cr *appv1alpha1.NginxIngress, postFix string) v1beta1.PodDisruptionBudget {
-	podDisruptionBudget := v1beta1.PodDisruptionBudget{}
-	//if cr.Spec.Replicas >= 2 {
-	minAvailable := intstr.FromInt(1)
-	selector := metav1.LabelSelector{
-		MatchLabels: baseLabels(cr),
-	}
-	if cr.Spec.ControllerPdb.Spec.MinAvailable == nil && cr.Spec.ControllerPdb.Spec.MaxUnavailable == nil {
-		minAvailable = intstr.FromInt(1)
-	} else if cr.Spec.ControllerPdb.Spec.MinAvailable != nil {
-		minAvailable = *cr.Spec.ControllerPdb.Spec.MinAvailable
-	}
-
-	specPDB := v1beta1.PodDisruptionBudgetSpec{
-		MinAvailable: &minAvailable,
-		Selector:     &selector,
-	}
-	podDisruptionBudget = v1beta1.PodDisruptionBudget{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + postFix,
-			Namespace: cr.Namespace,
-		},
-		Spec: specPDB,
-	}
-
-	//} else {
-	//	maxUnavailable := intstr.FromInt(1)
-	//	selector := metav1.LabelSelector{
-	//		MatchLabels: baseLabels(cr),
-	//	}
-	//	specPDB := v1beta1.PodDisruptionBudgetSpec{
-	//		Selector:       &selector,
-	//		MaxUnavailable: &maxUnavailable,
-	//	}
-	//	podDisruptionBudget = v1beta1.PodDisruptionBudget{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Name:      cr.Name + postFix,
-	//			Namespace: cr.Namespace,
-	//		},
-	//		Spec: specPDB,
-	//	}
-	//}
-	return podDisruptionBudget
 }

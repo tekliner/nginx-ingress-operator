@@ -15,13 +15,6 @@ func mergeMaps(itermaps ...map[string]string) map[string]string {
 	return result
 }
 
-func baseLabels(cr *appv1alpha1.NginxIngress) map[string]string {
-	return map[string]string{
-		"app.improvado.io/application": "nginx-ingress-controller",
-		"app.improvado.io/instance":    cr.Name,
-	}
-}
-
 func returnDefaultAnnotations(cr *appv1alpha1.NginxIngress) map[string]string {
 	return map[string]string{}
 }

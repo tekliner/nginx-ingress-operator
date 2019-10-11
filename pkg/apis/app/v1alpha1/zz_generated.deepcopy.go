@@ -94,6 +94,7 @@ func (in *DefaultBackendSpec) DeepCopyInto(out *DefaultBackendSpec) {
 			}
 		}
 	}
+	in.Pdb.DeepCopyInto(&out.Pdb)
 	return
 }
 
@@ -244,6 +245,7 @@ func (in *NginxControllerSpec) DeepCopyInto(out *NginxControllerSpec) {
 			(*out)[key] = val
 		}
 	}
+	in.Pdb.DeepCopyInto(&out.Pdb)
 	return
 }
 
@@ -345,7 +347,6 @@ func (in *NginxIngressSpec) DeepCopyInto(out *NginxIngressSpec) {
 			(*out)[key] = val
 		}
 	}
-	in.BackendPdb.DeepCopyInto(&out.BackendPdb)
 	in.ControllerPdb.DeepCopyInto(&out.ControllerPdb)
 	return
 }

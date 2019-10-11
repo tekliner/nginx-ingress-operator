@@ -31,6 +31,7 @@ func reconcileDeployment(foundDeployment v1.Deployment, newDeployment v1.Deploym
 
 }
 func reconcilePdb(foundPdb v1beta1.PodDisruptionBudget, newPdb v1beta1.PodDisruptionBudget) (bool, v1beta1.PodDisruptionBudget) {
+
 	reconcileRequired := false
 	if !reflect.DeepEqual(foundPdb.Spec.Selector, newPdb.Spec.Selector) {
 		foundPdb.Spec.Selector = newPdb.Spec.Selector

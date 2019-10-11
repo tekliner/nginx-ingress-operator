@@ -348,7 +348,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 
 	// reconcile podDisruptionBudget
 	reqLogger.Info("--------------Pdb ")
-	if instance.Spec.DefaultBackend == nil {
+	if instance.Spec.DefaultBackend != nil {
 		replicas := int32(1)
 		reqLogger.Info("Backend")
 		if instance.Spec.DefaultBackend.Replicas != nil {

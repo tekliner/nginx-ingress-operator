@@ -347,10 +347,10 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	// reconcile podDisruptionBudget
-	reqLogger.Info("--------------Pdb ")
+	reqLogger.Info("Pdb ")
 	if instance.Spec.DefaultBackend != nil {
 		replicas := int32(1)
-		reqLogger.Info("Backend")
+		reqLogger.Info("--------------DefaultBackend")
 		if instance.Spec.DefaultBackend.Replicas != nil {
 			replicas = *instance.Spec.DefaultBackend.Replicas
 		}
@@ -368,7 +368,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: newBackendPDB.Name, Namespace: newBackendPDB.Namespace}, &foundBackendPDB)
 		if err != nil && errors.IsNotFound(err) {
-			reqLogger.Info("Creating a new PodDisruptionBudget", "Namespace", newBackendPDB.Namespace, "Name", newBackendPDB.Name)
+			reqLogger.Info("Creating a new PodDisruptionBudget(Backend)", "Namespace", newBackendPDB.Namespace, "Name", newBackendPDB.Name)
 			err = r.client.Create(context.TODO(), &newBackendPDB)
 			if err != nil {
 				raven.CaptureErrorAndWait(err, nil)

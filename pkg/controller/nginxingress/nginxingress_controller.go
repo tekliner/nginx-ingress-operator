@@ -38,7 +38,7 @@ func init() {
  */
 
 // Map to String converter
-func createKeyValuePairs(m map[string]string) string {
+func convertMapToString(m map[string]string) string {
 	s := new(bytes.Buffer)
 	for key, value := range m {
 		fmt.Fprintf(s, "%s=\"%s\"\n", key, value)
@@ -358,9 +358,9 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	// reconcile podDisruptionBudget
-	reqLogger.Info("Pdb ")
-	reqLogger.Info(createKeyValuePairs(instance.GetBackendLabels()))
-	if instance.Spec.DefaultBackend != nil {
+	reqLogger.Info("Pdb reconcile")
+	reqLogger.Info(convertMapToString(instance.GetBackendLabels()))
+	if instance.Spec.NginxController.DefaultBackendService == "" {
 		replicas := int32(1)
 		reqLogger.Info("--------------DefaultBackend")
 		if instance.Spec.DefaultBackend.Replicas != nil {

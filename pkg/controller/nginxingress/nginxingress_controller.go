@@ -361,7 +361,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 	reqLogger.Info("Pdb reconcile")
 	reqLogger.Info(convertMapToString(instance.GetBackendLabels()))
 
-	if instance.Spec.NginxController.DefaultBackendService != "" {
+	if instance.Spec.NginxController.DefaultBackendService == "" {
 		replicas := int32(1)
 		backend := instance.Spec.DefaultBackend
 		reqLogger.Info("--------------DefaultBackend found")

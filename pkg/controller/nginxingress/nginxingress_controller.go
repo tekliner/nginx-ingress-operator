@@ -358,22 +358,18 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	// reconcile podDisruptionBudget
-	reqLogger.Info("Pdb reconcile")
-	reqLogger.Info(convertMapToString(instance.GetBackendLabels()))
-
 	if instance.Spec.NginxController.DefaultBackendService == "" {
 		replicas := int32(1)
-		backend := instance.Spec.DefaultBackend
-		reqLogger.Info("--------------DefaultBackend found")
-		if backend != nil {
-			if backend.Replicas != nil {
-				replicas = *backend.Replicas
+		backendSpec := instance.Spec.DefaultBackend
+		if backendSpec != nil {
+			if backendSpec.Replicas != nil {
+				replicas = *backendSpec.Replicas
 			}
 		} else {
-			backend = &appv1alpha1.DefaultBackendSpec{}
+			backendSpec = &appv1alpha1.DefaultBackendSpec{}
 		}
 
-		newBackendPDB := instance.Spec.DefaultBackend.GetDisruptionBudget(instance.Name,
+		newBackendPDB := backendSpec.GetDisruptionBudget(instance.Name,
 			instance.Namespace,
 			replicas,
 			instance.GetBackendLabels())
@@ -398,9 +394,9 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 			return reconcile.Result{}, err
 		} else {
 			if reconcileRequired, reconPDB := reconcilePdb(foundBackendPDB, newBackendPDB); reconcileRequired {
-				reqLogger.Info("Updating PodDisruptionBudget", "Namespace", reconPDB.Namespace, "Name", reconPDB.Name)
+				reqLogger.Info("Updating PodDisruptionBudget(Backend)", "Namespace", reconPDB.Namespace, "Name", reconPDB.Name)
 				if err = r.client.Update(context.TODO(), &reconPDB); err != nil {
-					reqLogger.Info("Reconcile PodDisruptionBudget error", "Namespace", foundBackendPDB.Namespace, "Name", foundBackendPDB.Name)
+					reqLogger.Info("Reconcile PodDisruptionBudget(Backend) error", "Namespace", foundBackendPDB.Namespace, "Name", foundBackendPDB.Name)
 					raven.CaptureErrorAndWait(err, nil)
 					return reconcile.Result{}, err
 				}

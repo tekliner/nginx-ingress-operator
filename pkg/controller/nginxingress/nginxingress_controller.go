@@ -1,7 +1,9 @@
 package nginxingress
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/getsentry/raven-go"
@@ -34,6 +36,15 @@ func init() {
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
  */
+
+// Map to String converter
+func createKeyValuePairs(m map[string]string) string {
+	s := new(bytes.Buffer)
+	for key, value := range m {
+		fmt.Fprintf(s, "%s=\"%s\"\n", key, value)
+	}
+	return s.String()
+}
 
 // Add creates a new NginxIngress Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -348,7 +359,7 @@ func (r *ReconcileNginxIngress) Reconcile(request reconcile.Request) (reconcile.
 
 	// reconcile podDisruptionBudget
 	reqLogger.Info("Pdb ")
-
+	reqLogger.Info(createKeyValuePairs(instance.GetBackendLabels()))
 	if instance.Spec.DefaultBackend != nil {
 		replicas := int32(1)
 		reqLogger.Info("--------------DefaultBackend")

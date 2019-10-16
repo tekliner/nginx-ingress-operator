@@ -347,7 +347,6 @@ func (in *NginxIngressSpec) DeepCopyInto(out *NginxIngressSpec) {
 			(*out)[key] = val
 		}
 	}
-	in.ControllerPdb.DeepCopyInto(&out.ControllerPdb)
 	return
 }
 

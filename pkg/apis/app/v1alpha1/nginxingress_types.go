@@ -182,13 +182,12 @@ type NginxIngressSpec struct {
 
 	Replicas int32 `json:"replicas"`
 
-	Metrics                 *MetricsServiceSpecs        `json:"metrics,omitempty"`
-	Stats                   *StatsSpec                  `json:"stats,omitempty"`
-	NginxController         NginxControllerSpec         `json:"nginxController"`
-	DefaultBackend          *DefaultBackendSpec         `json:"defaultBackend,omitempty"`
-	NginxServiceSpec        v1.ServiceSpec              `json:"service"`
-	NginxServiceAnnotations map[string]string           `json:"serviceAnnotations,omitempty"`
-	ControllerPdb           v1beta1.PodDisruptionBudget `json:"controllerPdb"`
+	Metrics                 *MetricsServiceSpecs `json:"metrics,omitempty"`
+	Stats                   *StatsSpec           `json:"stats,omitempty"`
+	NginxController         NginxControllerSpec  `json:"nginxController"`
+	DefaultBackend          *DefaultBackendSpec  `json:"defaultBackend,omitempty"`
+	NginxServiceSpec        v1.ServiceSpec       `json:"service"`
+	NginxServiceAnnotations map[string]string    `json:"serviceAnnotations,omitempty"`
 
 	ServiceAccount string `json:"serviceAccount,omitempty"`
 }

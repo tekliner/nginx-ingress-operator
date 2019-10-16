@@ -24,6 +24,7 @@ func generateConfigmap(cr *appv1alpha1.NginxIngress) corev1.ConfigMap {
 func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 	labels := map[string]string{
 		"app.improvado.io/component": "service",
+		"app.improvado.io/instance":  cr.Name,
 	}
 
 	service := corev1.Service{
@@ -46,7 +47,7 @@ func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 		},
 	}
 
-	service.Spec.Selector = mergeMaps(baseLabels(cr), map[string]string{"app.improvado.io/component": "application"})
+	service.Spec.Selector = cr.GetControllerLabels()
 
 	return service
 }
@@ -76,7 +77,7 @@ func generateServiceStats(cr *appv1alpha1.NginxIngress) corev1.Service {
 		},
 	}
 
-	service.Spec.Selector = mergeMaps(baseLabels(cr), map[string]string{"app.improvado.io/component": "application"})
+	service.Spec.Selector = cr.GetControllerLabels()
 
 	return service
 }
@@ -116,7 +117,7 @@ func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 		},
 	}
 
-	service.Spec.Selector = mergeMaps(baseLabels(cr), map[string]string{"app.improvado.io/component": "application"})
+	service.Spec.Selector = cr.GetControllerLabels()
 
 	return service
 }
@@ -260,19 +261,17 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
 			Namespace: cr.ObjectMeta.Namespace,
-			Labels:    baseLabels(cr),
+			Labels:    cr.GetControllerLabels(),
 		},
 		Spec: v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: baseLabels(cr),
+				MatchLabels: cr.GetControllerLabels(),
 			},
 			Replicas: &cr.Spec.Replicas,
 			Strategy: v1.DeploymentStrategy{Type: v1.RollingUpdateDeploymentStrategyType, RollingUpdate: nil},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: mergeMaps(baseLabels(cr),
-						map[string]string{"app.improvado.io/component": "application"},
-					),
+					Labels:      cr.GetControllerLabels(),
 					Annotations: annotations,
 				},
 
@@ -307,7 +306,6 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 }
 
 func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
-
 	// naming of defaultBackend
 	defaultBackendName := cr.Name + "-default-backend"
 	defaultBackendNamespace := cr.Namespace
@@ -385,11 +383,11 @@ func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deploymen
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      defaultBackendName,
 			Namespace: defaultBackendNamespace,
-			Labels:    baseLabels(cr),
+			Labels:    cr.GetBackendLabels(),
 		},
 		Spec: v1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: baseLabels(cr),
+				MatchLabels: cr.GetBackendLabels(),
 			},
 			Replicas: &replicas,
 			Strategy: v1.DeploymentStrategy{
@@ -398,9 +396,7 @@ func generateDefaultBackendDeployment(cr *appv1alpha1.NginxIngress) v1.Deploymen
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: mergeMaps(baseLabels(cr),
-						map[string]string{"app.improvado.io/component": "defaultbackend"},
-					),
+					Labels:      cr.GetBackendLabels(),
 					Annotations: setAnnotations(cr, annotations),
 				},
 				Spec: corev1.PodSpec{
@@ -470,7 +466,7 @@ func generateDefaultBackendService(cr *appv1alpha1.NginxIngress) corev1.Service 
 		},
 	}
 
-	service.Spec.Selector = baseLabels(cr)
+	service.Spec.Selector = cr.GetBackendLabels()
 
 	return service
 }

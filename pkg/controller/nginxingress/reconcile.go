@@ -1,6 +1,7 @@
 package nginxingress
 
 import (
+	"k8s.io/api/policy/v1beta1"
 	"reflect"
 
 	v1 "k8s.io/api/apps/v1"
@@ -28,6 +29,25 @@ func reconcileDeployment(foundDeployment v1.Deployment, newDeployment v1.Deploym
 
 	return reconcileRequired, foundDeployment
 
+}
+func reconcilePdb(foundPdb v1beta1.PodDisruptionBudget, newPdb v1beta1.PodDisruptionBudget) (bool, v1beta1.PodDisruptionBudget) {
+
+	reconcileRequired := false
+	if !reflect.DeepEqual(foundPdb.Spec.Selector, newPdb.Spec.Selector) {
+		foundPdb.Spec.Selector = newPdb.Spec.Selector
+		reconcileRequired = true
+	}
+
+	if !reflect.DeepEqual(foundPdb.Spec.MaxUnavailable, newPdb.Spec.MaxUnavailable) {
+		foundPdb.Spec.MaxUnavailable = newPdb.Spec.MaxUnavailable
+		reconcileRequired = true
+	}
+
+	if !reflect.DeepEqual(foundPdb.Spec.MinAvailable, newPdb.Spec.MinAvailable) {
+		foundPdb.Spec.MinAvailable = newPdb.Spec.MinAvailable
+		reconcileRequired = true
+	}
+	return reconcileRequired, foundPdb
 }
 
 func reconcileService(foundService corev1.Service, newService corev1.Service) (bool, corev1.Service) {

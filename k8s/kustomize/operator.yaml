@@ -15,8 +15,7 @@ spec:
       serviceAccountName: nginx-ingress-operator
       containers:
         - name: nginx-ingress-operator
-          # Replace this with the built image name
-          image: 716309063777.dkr.ecr.us-east-1.amazonaws.com/nginx-ingress-operator:debug
+          image: operator
           command:
           - nginx-ingress-operator
           imagePullPolicy: Always
@@ -24,7 +23,7 @@ spec:
             - name: SENTRY_DSN
               value: "https://d459b0af58254d9194c16db3ff56c11e:b69a9ea1c0534e9f99e710f17d79f1e9@sentry.tools.improvado.io/42"
             - name: WATCH_NAMESPACE
-              value: "nginx-ingress-operator-debug"
+              value: ""
             - name: POD_NAME
               valueFrom:
                 fieldRef:

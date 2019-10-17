@@ -1,10 +1,24 @@
-commonLabels:
-  version: debug
-
-images: 
+images:
   - name: operator
     newName: 716309063777.dkr.ecr.us-east-1.amazonaws.com/nginx-ingress-operator
     newTag: debug
 
 resources:
-- deployment.yaml
+- operator.yaml
+- cluster_role.yaml
+- cluster_role_binding.yaml
+- service_account.yaml
+
+patchesJson6902:
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: nginx-ingress-operator
+  path: operator-patch-sandbox.json
+- target:
+    group: rbac.authorization.k8s.io
+    version: v1
+    kind: ClusterRoleBinding
+    name: nginx-ingress-operator
+  path: cluster_role_binding-patch-sandbox.json

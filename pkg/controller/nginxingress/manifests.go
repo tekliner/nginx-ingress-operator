@@ -25,6 +25,7 @@ func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 	labels := map[string]string{
 		"app.improvado.io/component": "service",
 		"app.improvado.io/instance":  cr.Name,
+                "ingress.improvado.io/component": "metrics"
 	}
 
 	service := corev1.Service{

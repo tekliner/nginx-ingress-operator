@@ -56,7 +56,7 @@ patchesJson6902:
 ]
 """
             sh "kubectl kustomize k8s/kustomize/ > deploy.yaml"
-            archiveArtifacts: 'deploy.yaml'
+            archiveArtifacts 'deploy.yaml'
         }
 
         stage('Wait for confirmation of build promotion') {
@@ -95,7 +95,7 @@ patchesJson6902:
 ]
 """
             sh "kubectl kustomize k8s/kustomize/ > deploy.yaml"
-            archiveArtifacts: 'deploy.yaml'
+            archiveArtifacts 'deploy.yaml'
         }
 
         stage('Deploy to sandbox') {

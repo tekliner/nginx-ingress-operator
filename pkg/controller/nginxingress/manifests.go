@@ -23,9 +23,9 @@ func generateConfigmap(cr *appv1alpha1.NginxIngress) corev1.ConfigMap {
 
 func generateServiceMetrics(cr *appv1alpha1.NginxIngress) corev1.Service {
 	labels := map[string]string{
-		"app.improvado.io/component": "service",
-		"app.improvado.io/instance":  cr.Name,
-                "ingress.improvado.io/component": "metrics",
+		"app.improvado.io/component":     "service",
+		"app.improvado.io/instance":      cr.Name,
+		"ingress.improvado.io/component": "metrics",
 	}
 
 	service := corev1.Service{
@@ -114,6 +114,12 @@ func generateService(cr *appv1alpha1.NginxIngress) corev1.Service {
 			Name:       "https",
 			Port:       443,
 			TargetPort: intstr.FromString("https"),
+			Protocol:   corev1.ProtocolTCP,
+		},
+		{
+			Name:       "health",
+			Port:       10246,
+			TargetPort: intstr.FromString("health"),
 			Protocol:   corev1.ProtocolTCP,
 		},
 	}
@@ -226,6 +232,11 @@ func generateDeployment(cr *appv1alpha1.NginxIngress) v1.Deployment {
 		{
 			Name:          "https",
 			ContainerPort: 443,
+			Protocol:      corev1.ProtocolTCP,
+		},
+		{
+			Name:          "health",
+			ContainerPort: 10246,
 			Protocol:      corev1.ProtocolTCP,
 		},
 	}
